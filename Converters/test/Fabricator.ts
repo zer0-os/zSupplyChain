@@ -37,7 +37,7 @@ describe("Converters", function () {
 
   describe("Deploy", function () {
     it("Deploys fabricator", async function () {
-      const { fabricator, materials, owner } = await loadFixture(deploy);
+      const { fabricator, owner } = await loadFixture(deploy);
 
       expect(await fabricator.owner()).to.equal(owner.address);
     });
@@ -49,18 +49,22 @@ describe("Converters", function () {
   });
 
   describe("Blueprints", function () {
+
+    const requiredAmounts = [60, 10]
+    const fee = hre.ethers.parseEther("1");
+    
     it("Adds new blueprint", async function () {
       const { fabricator, materials } = await loadFixture(deploy);
-      const requiredAmounts = [60, 10]
-      fabricator.addBlueprint(materials, requiredAmounts);
+  
+      fabricator.addBlueprint(materials, requiredAmounts, fee);
     });
     it("Builds blueprint", async function () {
       const { fabricator, materials } = await loadFixture(deploy);
-      const requiredAmounts = [60, 10]
-      fabricator.addBlueprint(materials, requiredAmounts);
-
+      
+      fabricator.addBlueprint(materials, requiredAmounts, fee);
+      
       const blueprint = await fabricator.getBlueprint(0);
-      fabricator.build(blueprint);
+      fabricator.build(blueprint, {value: blueprint.fee});
     });
   });
 });

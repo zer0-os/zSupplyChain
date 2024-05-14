@@ -20,7 +20,8 @@ contract Fabricator is Ownable{
 
     constructor() Ownable(msg.sender){}
 
-    function build(Blueprint calldata blueprint) external payable {
+    function build(uint blueprintID) external payable {
+        Blueprint memory blueprint = getBlueprint(blueprintID);
         require(msg.value == blueprint.fee, "Incorrect fee paid");
         for (uint i = 0; i < blueprint.materials.length; i++) {
             blueprint.materials[i].transferFrom(msg.sender, address(this), blueprint.amountsRequired[i]);
@@ -32,10 +33,14 @@ contract Fabricator is Ownable{
     }
 
     function collectFees() external onlyOwner() {
-        payable(address(this)).transfer(address(this).balance);
+        payable(owner()).transfer(address(this).balance);
     }
 
     function getBlueprint(uint at) public view returns(Blueprint memory){
         return blueprints[at];
+    }
+
+    function getNumBlueprints() external view returns(uint){
+        return blueprints.length;
     }
 }

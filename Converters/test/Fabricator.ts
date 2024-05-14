@@ -1,5 +1,5 @@
 import {
-  time,
+  //time,
   loadFixture,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
@@ -41,30 +41,38 @@ describe("Converters", function () {
 
       expect(await fabricator.owner()).to.equal(owner.address);
     });
-    it("Deploys test resource 1", async function () {
-      const { fabricator, owner } = await loadFixture(deploy);
-
-      expect(await fabricator.owner()).to.equal(owner.address);
-    });
   });
 
   describe("Blueprints", function () {
 
     const requiredAmounts = [60, 10]
     const fee = hre.ethers.parseEther("1");
-    
+    const blueprintID = "0";
     it("Adds new blueprint", async function () {
       const { fabricator, materials } = await loadFixture(deploy);
   
-      fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+    });
+    it("Gets blueprint", async function () {
+      const { fabricator, materials } = await loadFixture(deploy);
+  
+      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await fabricator.getBlueprint(0);
     });
     it("Builds blueprint", async function () {
-      const { fabricator, materials } = await loadFixture(deploy);
+      const { fabricator, materials , user} = await loadFixture(deploy);
       
-      fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await fabricator.addBlueprint(materials, requiredAmounts, fee);
       
-      const blueprint = await fabricator.getBlueprint(0);
-      fabricator.build(blueprint, {value: blueprint.fee});
+      await fabricator.connect(user).build(blueprintID, {value: fee});
+    });
+    it("Collects fees", async function () {
+      const { fabricator, materials, owner, user } = await loadFixture(deploy);
+      
+      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+      
+      await fabricator.connect(user).build(blueprintID, {value: fee});
+      await fabricator.connect(owner).collectFees();
     });
   });
 });

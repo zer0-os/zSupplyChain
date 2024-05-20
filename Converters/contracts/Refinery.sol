@@ -26,6 +26,10 @@ contract Refinery is Ownable, ERC1155{
     }
 
     function addBlueprint(uint id, string calldata uri, ERC20[] calldata materials, uint[] calldata amountsRequired, uint fee) external onlyOwner(){
+        require(id != 0, "No ID");
+        require(materials.length != 0, "No materials");
+        require(materials.length == amountsRequired.length, "Materials length mismatch");
+        require(blueprints[id].materials.length == 0, "ID taken");
         blueprints[id] = Blueprint(uri, materials, amountsRequired, fee);
     }
 

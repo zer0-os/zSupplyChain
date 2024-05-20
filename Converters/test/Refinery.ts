@@ -47,7 +47,7 @@ describe("Converters", function () {
 
     const requiredAmounts = [60, 10]
     const fee = hre.ethers.parseEther("1");
-    const blueprintID = "0";
+    const blueprintID = "2424";
 
     it("Adds new blueprint", async function () {
       const { refinery, materials } = await loadFixture(deploy);
@@ -73,7 +73,7 @@ describe("Converters", function () {
       expect(blueprint.fee).to.equal(fee);
     });
 
-    it("Builds blueprint", async function () {
+    it("Fulfills blueprint", async function () {
       const { refinery, materials , user} = await loadFixture(deploy);
       
       await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
@@ -94,6 +94,41 @@ describe("Converters", function () {
         .to.changeEtherBalances([refinery, owner], [-fee, fee]);
       const finalOwnerBalance = await hre.ethers.provider.getBalance(owner.address);
       expect(finalOwnerBalance).to.be.above(initialOwnerBalance);
+    });
+  });
+  describe("Fail paths", function () {
+    const requiredAmounts = [60, 10]
+    const fee = hre.ethers.parseEther("1");
+    const blueprintID = "1";
+
+    it("Wont add blueprint with no ID", async function () {
+      const { refinery, materials } = await loadFixture(deploy);
+      const badID = "0";
+      await expect(refinery.addBlueprint(badID, "uri.com", materials, requiredAmounts, fee)).to.be.revertedWith("No ID");
+    });
+    it("Wont add blueprint with existing ID", async function () {
+      const { refinery, materials } = await loadFixture(deploy);
+
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
+      await expect(refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee)).to.be.revertedWith("ID taken");
+    });
+    it("Wont add blueprint with no materials", async function () {
+      const { refinery } = await loadFixture(deploy);
+      
+      await expect(refinery.addBlueprint(blueprintID, "uri.com", [], requiredAmounts, fee)).to.be.revertedWith("No materials");
+    });
+    it("Wont add blueprint with materials and required amount mismatch", async function () {
+      const { refinery, materials } = await loadFixture(deploy);
+      
+      await expect(refinery.addBlueprint(blueprintID, "uri.com", materials, [requiredAmounts[0]], fee)).to.be.revertedWith("Materials length mismatch");
+    });
+    it("Wont fulfill blueprint with invalid fee paid", async function () {
+      const { refinery, materials , user} = await loadFixture(deploy);
+      
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
+      
+      await expect(refinery.connect(user).fulfill(blueprintID, 1, "0x00", {value: "99"}))
+        .to.be.revertedWith("Invalid fee paid");
     });
   });
 });

@@ -14,9 +14,9 @@ describe("Converters", function () {
     const [owner, user] = await hre.ethers.getSigners();
     const userAddress = await user.getAddress();
 
-    const Fabricator = await hre.ethers.getContractFactory("Fabricator");
-    const fabricator = await Fabricator.deploy();
-    const fabricatorAddress = await fabricator.getAddress();
+    const Refinery = await hre.ethers.getContractFactory("Refinery");
+    const refinery = await Refinery.deploy("baseuri.com");
+    const refineryAddress = await refinery.getAddress();
 
     const Material = await hre.ethers.getContractFactory("ERC20Token");
     const material1 = await Material.deploy("Coal", "COAL");
@@ -29,17 +29,17 @@ describe("Converters", function () {
     await material1.mint(userAddress, mintAmt1);
     await material2.mint(userAddress, mintAmt2);
     
-    await material1.connect(user).approve(fabricatorAddress, mintAmt1);
-    await material2.connect(user).approve(fabricatorAddress, mintAmt2);
+    await material1.connect(user).approve(refineryAddress, mintAmt1);
+    await material2.connect(user).approve(refineryAddress, mintAmt2);
 
-    return { fabricator, materials, owner, user };
+    return { refinery, materials, owner, user };
   }
 
   describe("Deploy", function () {
-    it("Deploys fabricator", async function () {
-      const { fabricator, owner } = await loadFixture(deploy);
+    it("Deploys refinery", async function () {
+      const { refinery, owner } = await loadFixture(deploy);
 
-      expect(await fabricator.owner()).to.equal(owner.address);
+      expect(await refinery.owner()).to.equal(owner.address);
     });
   });
 
@@ -48,31 +48,32 @@ describe("Converters", function () {
     const requiredAmounts = [60, 10]
     const fee = hre.ethers.parseEther("1");
     const blueprintID = "0";
+    //let blueprint: any;
+
     it("Adds new blueprint", async function () {
-      const { fabricator, materials } = await loadFixture(deploy);
+      const { refinery, materials } = await loadFixture(deploy);
   
-      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
     });
     it("Gets blueprint", async function () {
-      const { fabricator, materials } = await loadFixture(deploy);
+      const { refinery, materials } = await loadFixture(deploy);
   
-      await fabricator.addBlueprint(materials, requiredAmounts, fee);
-      await fabricator.getBlueprint(0);
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
     });
     it("Builds blueprint", async function () {
-      const { fabricator, materials , user} = await loadFixture(deploy);
+      const { refinery, materials , user} = await loadFixture(deploy);
       
-      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
       
-      await fabricator.connect(user).build(blueprintID, {value: fee});
+      await refinery.connect(user).fulfill(blueprintID, 1, "0x00", {value: fee});
     });
     it("Collects fees", async function () {
-      const { fabricator, materials, owner, user } = await loadFixture(deploy);
+      const { refinery, materials, owner, user } = await loadFixture(deploy);
       
-      await fabricator.addBlueprint(materials, requiredAmounts, fee);
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
       
-      await fabricator.connect(user).build(blueprintID, {value: fee});
-      await fabricator.connect(owner).collectFees();
+      await refinery.connect(user).fulfill(blueprintID, 1, "0x00", {value: fee});
+      await refinery.connect(owner).collectFees();
     });
   });
 });

@@ -7,27 +7,26 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
 contract Refinery is Ownable, ERC1155{
     struct Blueprint {
-        uint id;
         string uri;
         ERC20[] materials; //. Which erc20 materials are needed for fulfillment
         uint[] amountsRequired; /// How many of each material is required per amount fulfilled
         uint fee;
     }
 
-    Blueprint[] public blueprints;
+    mapping(uint => Blueprint) public blueprints;
 
     constructor(string memory baseURI) Ownable(msg.sender) ERC1155(baseURI) {}
 
-    function fulfill(Blueprint calldata blueprint, uint amount, bytes calldata data) external payable {
-        require(msg.value == blueprint.fee * amount, "Invalid fee paid");
-        for (uint i = 0; i < blueprint.materials.length; i++) {
-            blueprint.materials[i].transferFrom(msg.sender, address(this), blueprint.amountsRequired[i]);
+    function fulfill(uint id, uint amount, bytes calldata data) external payable {
+        require(msg.value == blueprints[id].fee * amount, "Invalid fee paid");
+        for (uint i = 0; i < blueprints[id].materials.length; i++) {
+            blueprints[id].materials[i].transferFrom(msg.sender, address(this), blueprints[id].amountsRequired[i]*amount);
         }
-        _mint(msg.sender, blueprint.id, amount, data);
+        _mint(msg.sender, id, amount, data);
     }
 
     function addBlueprint(uint id, string calldata uri, ERC20[] calldata materials, uint[] calldata amountsRequired, uint fee) external onlyOwner(){
-        blueprints.push(Blueprint(id, uri, materials, amountsRequired, fee));
+        blueprints[id] = Blueprint(uri, materials, amountsRequired, fee);
     }
 
     function collectFees() external onlyOwner() {

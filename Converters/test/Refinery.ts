@@ -130,5 +130,13 @@ describe("Converters", function () {
       await expect(refinery.connect(user).fulfill(blueprintID, 1, "0x00", {value: "99"}))
         .to.be.revertedWith("Invalid fee paid");
     });
+    it("Wont fulfill nonexistent blueprint", async function () {
+      const { refinery, materials , user} = await loadFixture(deploy);
+      
+      await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
+      
+      await expect(refinery.connect(user).fulfill("9999999999", 1, "0x00", {value: "99"}))
+        .to.be.revertedWith("ID doesnt exist");
+    });
   });
 });

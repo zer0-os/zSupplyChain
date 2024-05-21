@@ -18,6 +18,7 @@ contract Refinery is Ownable, ERC1155{
     constructor(string memory baseURI) Ownable(msg.sender) ERC1155(baseURI) {}
 
     function fulfill(uint id, uint amount, bytes calldata data) external payable {
+        require(blueprints[id].materials.length != 0, "ID doesnt exist");
         require(msg.value == blueprints[id].fee * amount, "Invalid fee paid");
         for (uint i = 0; i < blueprints[id].materials.length; i++) {
             blueprints[id].materials[i].transferFrom(msg.sender, address(this), blueprints[id].amountsRequired[i]*amount);

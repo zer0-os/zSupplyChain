@@ -12,20 +12,20 @@ contract Refinery is Ownable, ERC1155, IRefinery{
     constructor(string memory baseURI) Ownable(msg.sender) ERC1155(baseURI) {}
 
     function fulfill(uint id, uint amount, bytes calldata data) external override payable {
-        require(blueprints[id].materials.length != 0, "ID doesnt exist");
+        require(blueprints[id].tokens.length != 0, "ID doesnt exist");
         require(msg.value == blueprints[id].fee * amount, "Invalid fee paid");
-        for (uint i = 0; i < blueprints[id].materials.length; i++) {
-            blueprints[id].materials[i].transferFrom(msg.sender, address(this), blueprints[id].amountsRequired[i]*amount);
+        for (uint i = 0; i < blueprints[id].tokens.length; i++) {
+            blueprints[id].tokens[i].transferFrom(msg.sender, address(this), blueprints[id].amountsRequired[i]*amount);
         }
         _mint(msg.sender, id, amount, data);
     }
 
-    function addBlueprint(uint id, string calldata uri, ERC20[] calldata materials, uint[] calldata amountsRequired, uint fee) external override onlyOwner(){
+    function addBlueprint(uint id, string calldata uri, ERC20[] calldata tokens, uint[] calldata amountsRequired, uint fee) external override onlyOwner(){
         require(id != 0, "No ID");
-        require(materials.length != 0, "No materials");
-        require(materials.length == amountsRequired.length, "Materials length mismatch");
-        require(blueprints[id].materials.length == 0, "ID taken");
-        blueprints[id] = Blueprint(uri, materials, amountsRequired, fee);
+        require(tokens.length != 0, "No tokens");
+        require(tokens.length == amountsRequired.length, "Tokens length mismatch");
+        require(blueprints[id].tokens.length == 0, "ID taken");
+        blueprints[id] = Blueprint(uri, tokens, amountsRequired, fee);
     }
 
     function collectFees() external override onlyOwner() {

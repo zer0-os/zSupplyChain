@@ -55,7 +55,7 @@ describe("Converters", function () {
       await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
       const blueprint = await refinery.getBlueprint(blueprintID);
       expect(blueprint.uri).to.equal("uri.com");
-      expect(blueprint.materials.length).to.equal(materials.length);
+      expect(blueprint.tokens.length).to.equal(materials.length);
       expect(blueprint.amountsRequired[0]).to.equal(requiredAmounts[0]);
       expect(blueprint.amountsRequired[1]).to.equal(requiredAmounts[1]);
       expect(blueprint.fee).to.equal(fee);
@@ -67,7 +67,7 @@ describe("Converters", function () {
       await refinery.addBlueprint(blueprintID, "uri.com", materials, requiredAmounts, fee);
       const blueprint = await refinery.getBlueprint(blueprintID);
       expect(blueprint.uri).to.equal("uri.com");
-      expect(blueprint.materials.length).to.equal(materials.length);
+      expect(blueprint.tokens.length).to.equal(materials.length);
       expect(blueprint.amountsRequired[0]).to.equal(requiredAmounts[0]);
       expect(blueprint.amountsRequired[1]).to.equal(requiredAmounts[1]);
       expect(blueprint.fee).to.equal(fee);
@@ -115,12 +115,12 @@ describe("Converters", function () {
     it("Wont add blueprint with no materials", async function () {
       const { refinery } = await loadFixture(deploy);
       
-      await expect(refinery.addBlueprint(blueprintID, "uri.com", [], requiredAmounts, fee)).to.be.revertedWith("No materials");
+      await expect(refinery.addBlueprint(blueprintID, "uri.com", [], requiredAmounts, fee)).to.be.revertedWith("No tokens");
     });
     it("Wont add blueprint with materials and required amount mismatch", async function () {
       const { refinery, materials } = await loadFixture(deploy);
       
-      await expect(refinery.addBlueprint(blueprintID, "uri.com", materials, [requiredAmounts[0]], fee)).to.be.revertedWith("Materials length mismatch");
+      await expect(refinery.addBlueprint(blueprintID, "uri.com", materials, [requiredAmounts[0]], fee)).to.be.revertedWith("Tokens length mismatch");
     });
     it("Wont fulfill blueprint with invalid fee paid", async function () {
       const { refinery, materials , user} = await loadFixture(deploy);

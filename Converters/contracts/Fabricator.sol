@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./IFabricator.sol";
 
-contract Fabricactor is Ownable, ERC721, IFabricator{
+contract Fabricator is Ownable, ERC721, IFabricator{
     mapping(uint => Build) private builds;
 
-    constructor(string memory name, string memory symbol, string memory baseURI) Ownable(msg.sender) ERC721(name, symbol) {}
+    constructor(string memory name, string memory symbol) Ownable(msg.sender) ERC721(name, symbol) {}
 
     function fabricate(uint id, uint amount) external override payable {
         require(builds[id].tokenIDs.length != 0, "ID doesnt exist");

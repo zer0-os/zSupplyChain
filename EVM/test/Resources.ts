@@ -22,18 +22,49 @@ import {
       const bondingTokenAddress = await bondingToken.getAddress();
   
       const mintAmt = hre.ethers.parseEther("1000");
-    
+      const largeMintAmt = hre.ethers.parseEther("1");
+      
+      await reserveToken.mint(deployer, largeMintAmt);
       await reserveToken.mint(userAddress, mintAmt);
       await reserveToken.mint(user1Address, mintAmt);
       await reserveToken.connect(user).approve(bondingTokenAddress, mintAmt);
       await reserveToken.connect(user1).approve(bondingTokenAddress, mintAmt);
       
-      return { bondingToken, reserveToken, deployer, user, user1 };
+      return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, user1, mintAmt, largeMintAmt };
     }
   
     describe("Bonding token", function () {
       it('Deploys bonding token', async function () {
         await loadFixture(deploy);
+      });
+      it('Initializes vault', async function () {
+        const { bondingToken, reserveToken, user } = await loadFixture(deploy);
+        
+        const bta = await bondingToken.getAddress();
+        console.log("starting balance", await bondingToken.balanceOf(bta));
+        console.log("starting reserve balance", await reserveToken.balanceOf(bta));
+        
+        console.log("max deposit", await bondingToken.maxDeposit(user));
+        console.log("max withdraw", await bondingToken.maxWithdraw(user));
+        console.log("max redeem", await bondingToken.maxRedeem(user));
+        console.log("max mint", await bondingToken.maxMint(user));
+
+        console.log("preview deposit")
+      });
+      it('donates large initial amount', async function () {
+        const { bondingToken, bondingTokenAddress, reserveToken, user, largeMintAmt } = await loadFixture(deploy);
+        await reserveToken.transfer(bondingTokenAddress, largeMintAmt);
+        
+        const depositAmt = hre.ethers.parseEther("1000");
+        console.log("deposit after donate", await bondingToken.previewDeposit(depositAmt));
+        await bondingToken.connect(user).deposit(depositAmt, user);
+        const bal = await bondingToken.balanceOf(user);
+        expect(bal).to.equal(depositAmt);
+      });
+      it('mints', async function () {
+        //const { bondingToken, user } = await loadFixture(deploy);
+        //const maxmint = await bondingToken.maxMint(user);
+        //await bondingToken.connect(user).mint(maxmint, user);
       });
       it('User 1 spends 1000 reserveToken to buy 1000 bondingToken', async function () {
         const { bondingToken, user } = await loadFixture(deploy);
@@ -43,12 +74,13 @@ import {
         expect(bal).to.equal(depositAmt);
       });
       it('User 2 spends 1000 reserveToken to buy 1000 bondingToken', async function () {
-        const { bondingToken, user, user1 } = await loadFixture(deploy);
+        const { bondingToken, reserveToken, user, user1 } = await loadFixture(deploy);
         const depositAmt = hre.ethers.parseEther("1000");
         
         await bondingToken.connect(user).deposit(depositAmt, user);
-        const bal = await bondingToken.balanceOf(user);
-        expect(bal).to.equal(depositAmt);
+        const bbal = await bondingToken.balanceOf(user);
+        expect(bbal).to.equal(depositAmt);
+        const rbal = await reserveToken.balanceOf(user);
 
         await bondingToken.connect(user1).deposit(depositAmt, user1);
         const bal1 = await bondingToken.balanceOf(user1);

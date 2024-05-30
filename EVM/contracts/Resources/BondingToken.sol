@@ -20,21 +20,6 @@ contract BondingToken is ERC4626{
         return super.deposit(netAssets, receiver);
     }
 
-    /// Override the mint function to apply entry fee
-    function mint(uint256 shares, address receiver) public override returns (uint256) {
-        uint256 assets = previewMint(shares);
-        uint256 fee = (assets * entryFee) / 10000;
-        uint256 netAssets = assets - fee;
-        return super.mint(netAssets, receiver);
-    }
-
-    /// Override the withdraw function to apply exit fee
-    function withdraw(uint256 assets, address receiver, address owner) public override returns (uint256) {
-        uint256 fee = (assets * exitFee) / 10000;
-        uint256 netAssets = assets - fee;
-        return super.withdraw(netAssets, receiver, owner);
-    }
-
     /// Override the redeem function to apply exit fee
     function redeem(uint256 shares, address receiver, address owner) public override returns (uint256) {
         uint256 assets = previewRedeem(shares);

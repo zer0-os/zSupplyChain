@@ -42,4 +42,12 @@ contract BondingToken is ERC4626{
         uint256 netAssets = assets - fee;
         return super.redeem(netAssets, receiver, owner);
     }
+
+    function setEntryFee(uint256 _entryFeeBasisPoints) external {
+        entryFee = _entryFeeBasisPoints;
+    }
+
+    function setExitFee(uint256 _exitFeeBasisPoints) external {
+        exitFee = _exitFeeBasisPoints;
+    }
 }

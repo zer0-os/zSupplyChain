@@ -17,8 +17,9 @@ contract BondingToken is ERC4626{
     function deposit(uint256 assets, address receiver) public override returns (uint256) {
         uint256 fee = (assets * entryFee) / 100000;
         uint256 netAssets = assets - fee;
-        IERC20(asset()).transferFrom(_msgSender(), address(this), fee);
-        return super.deposit(netAssets, receiver);
+        uint256 shares = previewDeposit(netAssets); ///effectively takes fee
+        _deposit(_msgSender(), receiver, assets, shares);
+        return shares;
     }
 
     /// Override the redeem function to apply exit fee
@@ -26,7 +27,6 @@ contract BondingToken is ERC4626{
         uint256 assets = previewRedeem(shares);
         uint256 fee = (assets * exitFee) / 100000;
         uint256 netAssets = assets - fee;
-        IERC20(asset()).transferFrom(_msgSender(), address(this), fee);
         return super.redeem(netAssets, receiver, owner);
     }
 

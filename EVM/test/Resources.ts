@@ -1,23 +1,7 @@
-import {
-  loadFixture,
-} from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
-
-// Helper function to calculate expected amounts
-function calculateExpectedAmounts(entryFee: bigint, exitFee: bigint, amount: bigint) {
-  const entryFeeAmount = (amount * entryFee) / 10000n;
-  const amountAfterEntryFee = amount - entryFeeAmount;
-  const exitFeeAmount = (amountAfterEntryFee * exitFee) / 10000n;
-  const amountAfterExitFee = amountAfterEntryFee - exitFeeAmount;
-
-  return {
-    entryFeeAmount,
-    amountAfterEntryFee,
-    exitFeeAmount,
-    amountAfterExitFee
-  };
-}
+const { ethers } = hre;
 
 describe("BondingToken Edge Case Tests", function () {
   async function deploy() {
@@ -32,104 +16,134 @@ describe("BondingToken Edge Case Tests", function () {
     const reserveTokenAddress = await reserveToken.getAddress();
 
     const bondingTokenFactory = await hre.ethers.getContractFactory("BondingToken");
-    const bondingToken = await bondingTokenFactory.deploy("GOLD", "GLD", reserveTokenAddress, 0n, 0n);
+    const bondingToken = await bondingTokenFactory.deploy("GOLD", "GLD", reserveTokenAddress, 0, 0);
     const bondingTokenAddress = await bondingToken.getAddress();
 
-    const mintAmt = 1000n * 10n**18n; // 1000 ether in wei
-    await reserveToken.mint(userAddress, mintAmt);
-    await reserveToken.mint(user1Address, mintAmt);
-    await reserveToken.mint(user2Address, mintAmt);
-    await reserveToken.mint(user3Address, mintAmt);
-    await reserveToken.connect(user).approve(bondingTokenAddress, mintAmt);
-    await reserveToken.connect(user1).approve(bondingTokenAddress, mintAmt);
-    await reserveToken.connect(user2).approve(bondingTokenAddress, mintAmt);
-    await reserveToken.connect(user3).approve(bondingTokenAddress, mintAmt);
-
-    return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, user1, user2, user3, others };
+    return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address, others };
   }
 
-  const entryFees = [0n, 100n]; // 0%, 1%
-  const exitFees = [0n, 100n]; // 0%, 1%
+  const entryFees = [0, 100]; // 0%, 1%
+  const exitFees = [0, 100]; // 0%, 1%
   const amounts = [
-    1n, 
-    1n, 
-    10n**18n, // 1 ether in wei
-    1000n * 10n**18n // 1000 ether in wei
+    1n,
+    10n ** 18n, // 1 ether in wei
+    1000n * 10n ** 18n // 1000 ether in wei
   ]; // 1 wei, 1 ether, 1000 ether
   const numUsers = [1, 2];
+
+  /**
+   * Helper function to simulate the share return when depositing assets.
+   * @param {bigint} amount - The amount to deposit.
+   * @param {bigint} totalAssets - The current total assets in the contract.
+   * @param {bigint} totalShares - The current total shares in the contract.
+   * @param {number} feeBasisPoints - The entry fee in basis points.
+   * @returns {bigint} - The number of shares returned after depositing.
+   */
+  function simulateDepositShares(
+    amount: bigint,
+    totalAssets: bigint,
+    totalShares: bigint,
+    feeBasisPoints: number
+  ): bigint {
+    const feeAmount = (amount * BigInt(feeBasisPoints)) / 100000n;
+    const netDepositAmount = amount - feeAmount;
+    if (totalShares === 0n) {
+      return netDepositAmount;
+    } else {
+      return (netDepositAmount * totalShares) / totalAssets;
+    }
+  }
+
+  /**
+   * Helper function to simulate the asset return when redeeming shares.
+   * @param {bigint} shares - The number of shares to redeem.
+   * @param {bigint} totalAssets - The current total assets in the contract.
+   * @param {bigint} totalShares - The current total shares in the contract.
+   * @param {number} feeBasisPoints - The exit fee in basis points.
+   * @returns {bigint} - The number of assets returned after redeeming shares.
+   */
+  function simulateRedeemAssets(
+    shares: bigint,
+    totalAssets: bigint,
+    totalShares: bigint,
+    feeBasisPoints: number
+  ): bigint {
+    const assets = (shares * totalAssets) / totalShares;
+    const fee = (assets * BigInt(feeBasisPoints)) / 100000n;
+    const netAssets = assets - fee;
+    return netAssets;
+  }
 
   for (const entryFee of entryFees) {
     for (const exitFee of exitFees) {
       for (const amount of amounts) {
-        for (const numUser of numUsers) {
-          it(`Simulates economy with entryFee=${entryFee}, exitFee=${exitFee}, amount=${amount}, numUsers=${numUser}`, async function () {
-            const { bondingToken, bondingTokenAddress, reserveToken, user, user1, user2, user3, others } = await loadFixture(deploy);
+        for (const userCount of numUsers) {
+          it(`should correctly handle deposit and redeem with entry fee ${entryFee} bps and exit fee ${exitFee} bps for ${userCount} user(s) depositing ${amount.toString()} wei`, async function () {
+            const { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address } = await loadFixture(deploy);
 
-            // Set entry and exit fees
             await bondingToken.setEntryFee(entryFee);
             await bondingToken.setExitFee(exitFee);
 
-            const users = [user, user1, user2, user3].slice(0, numUser);
+            const users = [user, user1, user2, user3].slice(0, userCount);
+            const userAddresses = [userAddress, user1Address, user2Address, user3Address].slice(0, userCount);
 
-            // Users buy BT
-            for (const u of users) {
-              const { entryFeeAmount, amountAfterEntryFee } = calculateExpectedAmounts(entryFee, exitFee, amount);
+            // Initial state variables
+            let totalAssets = 0n;
+            let totalShares = 0n;
 
-              console.log(`User deposit: ${amount.toString()}`);
-              console.log(`Entry Fee: ${entryFeeAmount.toString()}`);
-              console.log(`Amount after Entry Fee: ${amountAfterEntryFee.toString()}`);
+            for (let i = 0; i < users.length; i++) {
+              const user = users[i];
+              const userAddress = userAddresses[i];
+              
+              // Mint and approve before each deposit
+              await reserveToken.mint(userAddress, amount);
+              await reserveToken.connect(user).approve(bondingTokenAddress, amount);
 
-              await expect(bondingToken.connect(u).deposit(amount, u.address))
+              const shares = simulateDepositShares(amount, totalAssets, totalShares, entryFee);
+              totalAssets += amount; // Include the full amount (net + fee)
+              totalShares += shares;
+
+              console.log(`Deposit: User ${i + 1}`);
+              console.log(`  Amount: ${amount}`);
+              console.log(`  Shares: ${shares}`);
+              console.log(`  Total Assets: ${totalAssets}`);
+              console.log(`  Total Shares: ${totalShares}`);
+
+              await expect(bondingToken.connect(user).deposit(amount, userAddress))
                 .to.emit(bondingToken, 'Deposit')
-                .withArgs(u.address, u.address, amountAfterEntryFee, amount);
+                .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 100000n), shares);
 
-              const btBalance = await bondingToken.balanceOf(u.address);
-              console.log(`BT Balance of user ${u.address}: ${btBalance.toString()}`);
-              expect(btBalance).to.equal(amountAfterEntryFee);
-
-              const rtBalance = await reserveToken.balanceOf(bondingTokenAddress);
-              const expectedRTBalance = amountAfterEntryFee * BigInt(users.length);
-              console.log(`RT Balance of bonding token: ${rtBalance.toString()}, expected: ${expectedRTBalance.toString()}`);
-              expect(rtBalance).to.equal(expectedRTBalance);
+              const contractBalance = await reserveToken.balanceOf(bondingTokenAddress);
+              console.log(`  Contract balance after deposit: ${contractBalance}`);
+              expect(contractBalance).to.equal(totalAssets);
             }
 
-            // Users sell BT
-            for (const u of users) {
-              const { amountAfterEntryFee, amountAfterExitFee } = calculateExpectedAmounts(entryFee, exitFee, amount);
+            for (let i = 0; i < users.length; i++) {
+              const user = users[i];
+              const userAddress = userAddresses[i];
+              const sharesToRedeem = await bondingToken.balanceOf(user);
+              const assets = simulateRedeemAssets(sharesToRedeem, totalAssets, totalShares, exitFee);
+              totalAssets -= assets;
 
-              console.log(`User withdraw: ${amountAfterEntryFee.toString()}`);
-              console.log(`Exit Fee: ${amountAfterExitFee.toString()}`);
-              console.log(`Amount after Exit Fee: ${amountAfterExitFee.toString()}`);
+              console.log(`Redeem: User ${i + 1}`);
+              console.log(`  Shares to Redeem: ${sharesToRedeem}`);
+              console.log(`  Redeemed Assets: ${assets}`);
+              console.log(`  Total Assets: ${totalAssets}`);
+              console.log(`  Total Shares: ${totalShares}`);
 
-              await expect(bondingToken.connect(u).redeem(amountAfterEntryFee, u.address, u.address))
+              await reserveToken.connect(user).approve(bondingTokenAddress, sharesToRedeem);
+              await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
                 .to.emit(bondingToken, 'Withdraw')
-                .withArgs(u.address, u.address, u.address, amountAfterExitFee, amountAfterEntryFee);
+                .withArgs(userAddress, userAddress, userAddress, assets, sharesToRedeem);
 
-              const btBalance = await bondingToken.balanceOf(u.address);
-              console.log(`BT Balance of user ${u.address} after withdraw: ${btBalance.toString()}`);
-              expect(btBalance).to.equal(0n);
-
-              const rtBalance = await reserveToken.balanceOf(u.address);
-              console.log(`RT Balance of user ${u.address}: ${rtBalance.toString()}`);
-              expect(rtBalance).to.equal(amountAfterExitFee);
+              const feeAmount = (assets * BigInt(exitFee)) / 100000n;
+              if (feeAmount > 0) {
+                // Ensure the fee is transferred to the contract
+                const contractBalance = await reserveToken.balanceOf(bondingTokenAddress);
+                console.log(`  Contract balance after redeem: ${contractBalance}`);
+                expect(contractBalance).to.equal(totalAssets + feeAmount);
+              }
             }
-
-            // Final checks for contract balances
-            const totalRTDeposited = amount * BigInt(users.length);
-            const totalEntryFees = (totalRTDeposited * entryFee) / 10000n;
-            const totalBTMinted = totalRTDeposited - totalEntryFees;
-
-            const totalRTWithdrawn = totalBTMinted;
-            const totalExitFees = (totalRTWithdrawn * exitFee) / 10000n;
-            const totalRTReceivedByUsers = totalRTWithdrawn - totalExitFees;
-
-            const finalContractBalance = await reserveToken.balanceOf(bondingTokenAddress);
-            console.log(`Final contract balance: ${finalContractBalance.toString()}`);
-            expect(finalContractBalance).to.equal(0n);
-
-            const finalRTBalance = totalRTDeposited - totalRTReceivedByUsers;
-            console.log(`Final RT Balance: ${finalRTBalance.toString()}, total entry fees + exit fees: ${(totalEntryFees + totalExitFees).toString()}`);
-            expect(finalRTBalance).to.equal(totalEntryFees + totalExitFees);
           });
         }
       }

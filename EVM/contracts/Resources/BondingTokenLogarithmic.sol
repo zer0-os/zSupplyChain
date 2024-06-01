@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract LogarithmicBondingToken is ERC4626 {
-    uint entryFee = 1; // entry fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
-    uint exitFee = 1; // exit fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
+    uint entryFee; // entry fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
+    uint exitFee; // exit fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
 
     constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) ERC4626(reserveToken) ERC20(name, symbol) {
         entryFee = entryFeeBasisPoints;
@@ -39,9 +39,7 @@ contract LogarithmicBondingToken is ERC4626 {
     }
 
     function deposit(uint256 assets, address receiver) public override returns (uint256) {
-        uint256 fee = (assets * entryFee) / 100000;
-        uint256 netAssets = assets - fee;
-        uint256 shares = previewDeposit(netAssets); // effectively takes fee
+        uint256 shares = previewDeposit(assets - ((assets * entryFee) / 100000));
         _deposit(_msgSender(), receiver, assets, shares);
         return shares;
     }

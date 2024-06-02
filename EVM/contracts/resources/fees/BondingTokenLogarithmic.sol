@@ -46,7 +46,6 @@ contract LogarithmicBondingToken is ERC4626 {
 
     function redeem(uint256 shares, address receiver, address owner) public override returns (uint256) {
         uint256 assets = previewRedeem(shares);
-        uint256 fee = (assets * exitFee) / 100000;
         uint256 netAssets = assets - (assets * exitFee) / 100000;
         return super.redeem(netAssets, receiver, owner);
     }

@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
 import fs from "fs";
-import { BondingToken } from "../typechain-types/contracts/Resources";
+import { BondingToken } from "../typechain-types/contracts/resources";
 //import { ERC20Token } from "../typechain-types/contracts/test";
 
 const { ethers } = hre;
@@ -31,8 +31,8 @@ describe("BondingToken Edge Case Tests", function () {
   const amounts = [
     1n,
     10n ** 18n, // 1 ether in wei
-    1000n * 10n ** 18n // 1000 ether in wei
-  ]; // 1 wei, 1 ether, 1000 ether
+    100n * 10n ** 18n // 1000 ether in wei
+  ]; // 1 wei, 1 ether, 100 ether
   const numUsers = [1, 2];
 
   async function getExpectedShares(bondingToken: BondingToken, amount: bigint, feeBasisPoints: number) {

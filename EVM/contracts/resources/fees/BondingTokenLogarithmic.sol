@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-contract LogarithmicBondingToken is ERC4626 {
+contract LogarithmicBondingToken is Ownable, ERC4626 {
     uint entryFee; // entry fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
     uint exitFee; // exit fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
 
-    constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) ERC4626(reserveToken) ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) 
+    Ownable(msg.sender)
+    ERC4626(reserveToken) 
+    ERC20(name, symbol) {
         entryFee = entryFeeBasisPoints;
         exitFee = exitFeeBasisPoints;
     }

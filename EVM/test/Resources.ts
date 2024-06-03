@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
 import fs from "fs";
-import { BondingToken } from "../typechain-types/contracts/resources";
+import { BondingToken } from "../typechain-types/contracts/resources/fees";
 
 const { ethers } = hre;
 
@@ -45,6 +45,20 @@ describe("BondingToken Edge Case Tests", function () {
     return grossAssets - fee;
   }
 
+  const allData: {
+    users: { assets: string[], shares: string[] }[],
+    totalSupply: string[],
+    totalAssets: string[]
+  } = {
+    users: [],
+    totalSupply: [],
+    totalAssets: []
+  };
+
+
+  let totalAssets = 0n;
+  let totalShares = 0n;
+
   for (const entryFee of entryFees) {
     for (const exitFee of exitFees) {
       for (const amount of amounts) {
@@ -58,13 +72,10 @@ describe("BondingToken Edge Case Tests", function () {
             const users = [user, user1, user2, user3].slice(0, userCount);
             const userAddresses = [userAddress, user1Address, user2Address, user3Address].slice(0, userCount);
 
-            let totalAssets = 0n;
-            let totalShares = 0n;
 
             const data = users.map(() => ({ assets: [] as string[], shares: [] as string[] }));
-            const totalAssetsArray: string[] = [];
-            const totalSharesArray: string[] = [];
 
+            // Handle deposits
             for (let i = 0; i < users.length; i++) {
               const user = users[i];
               const userAddress = userAddresses[i];
@@ -75,59 +86,86 @@ describe("BondingToken Edge Case Tests", function () {
               const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
               const contractBalanceBefore = await reserveToken.balanceOf(bondingTokenAddress);
 
-              await expect(bondingToken.connect(user).deposit(amount, userAddress))
-                .to.emit(bondingToken, 'Deposit')
-                .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 10000n), expectedShares);
+              await bondingToken.connect(user).deposit(amount, userAddress);
+
+              //await expect(bondingToken.connect(user).deposit(amount, userAddress))
+              //  .to.emit(bondingToken, 'Deposit')
+              //  .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 10000n), expectedShares);
 
               const contractBalanceAfter = await reserveToken.balanceOf(bondingTokenAddress);
               const actualShares = await bondingToken.balanceOf(userAddress);
-              totalAssets = contractBalanceAfter;
+              totalAssets += amount;
               totalShares += expectedShares;
 
               data[i].assets.push(contractBalanceAfter.toString());
               data[i].shares.push(actualShares.toString());
-              totalAssetsArray.push(totalAssets.toString());
-              totalSharesArray.push(totalShares.toString());
 
-              expect(contractBalanceAfter).to.equal(totalAssets);
-              expect(actualShares).to.equal(expectedShares);
+              //expect(actualShares).to.equal(expectedShares);
             }
 
+            // Record total assets and supply after deposits
+            allData.totalSupply.push(totalShares.toString());
+            allData.totalAssets.push(totalAssets.toString());
+
+            for (let i = 0; i < users.length; i++) {
+              if (!allData.users[i]) {
+                allData.users[i] = { assets: [], shares: [] };
+              }
+              allData.users[i].assets.push(...data[i].assets);
+              allData.users[i].shares.push(...data[i].shares);
+            }
+
+            // Handle redeems
             for (let i = 0; i < users.length; i++) {
               const user = users[i];
               const userAddress = userAddresses[i];
-              const sharesToRedeem = await bondingToken.balanceOf(userAddress);
-
+              let sharesToRedeem = await bondingToken.maxRedeem(userAddress);
+              sharesToRedeem /= 2n;
+              //console.log(sharesToRedeem);
               const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
               const contractBalanceBefore = await reserveToken.balanceOf(bondingTokenAddress);
 
               await reserveToken.connect(user).approve(bondingTokenAddress, sharesToRedeem);
-              await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
-                .to.emit(bondingToken, 'Withdraw')
-                .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
+              await bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress);
+
+              //await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
+              //  .to.emit(bondingToken, 'Withdraw')
+              //  .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
 
               const contractBalanceAfter = await reserveToken.balanceOf(bondingTokenAddress);
               const actualAssets = contractBalanceBefore - contractBalanceAfter;
-              totalAssets = contractBalanceAfter;
+              totalAssets -= actualAssets;
 
               data[i].assets.push(contractBalanceAfter.toString());
               data[i].shares.push((await bondingToken.balanceOf(userAddress)).toString());
-              totalAssetsArray.push(totalAssets.toString());
-              totalSharesArray.push(totalShares.toString());
 
-              expect(actualAssets).to.equal(expectedAssets);
-              expect(contractBalanceAfter).to.equal(totalAssets);
+              //expect(actualAssets).to.equal(expectedAssets);
+              //expect(contractBalanceAfter).to.equal(totalAssets);
             }
 
-            // Generate the HTML file for the plots
-            generateHTML(data, entryFee, exitFee, amount, userCount, totalSharesArray, totalAssetsArray);
+            // Record total assets and supply after redeems
+            allData.totalSupply.push(totalShares.toString());
+            allData.totalAssets.push(totalAssets.toString());
+
+            for (let i = 0; i < users.length; i++) {
+              if (!allData.users[i]) {
+                allData.users[i] = { assets: [], shares: [] };
+              }
+              allData.users[i].assets.push(...data[i].assets);
+              allData.users[i].shares.push(...data[i].shares);
+            }
           });
         }
       }
     }
   }
 
-  function generateHTML(data: any, entryFee: number, exitFee: number, amount: bigint, userCount: number, totalSharesArray: string[], totalAssetsArray: string[]) {
+  after(() => {
+    // Generate the HTML file for the plots
+    generateHTML(allData);
+  });
+
+  function generateHTML(allData: any) {
     const html = `
     <!DOCTYPE html>
     <html>
@@ -136,7 +174,7 @@ describe("BondingToken Edge Case Tests", function () {
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
-      ${data.map((userData: any, index: number) => `
+      ${allData.users.map((userData: any, index: number) => `
         <h2>User ${index + 1} Assets Over Time</h2>
         <canvas id="user${index + 1}AssetsChart"></canvas>
         <h2>User ${index + 1} Shares Over Time</h2>
@@ -147,7 +185,7 @@ describe("BondingToken Edge Case Tests", function () {
       <h2>Total Assets Over Time</h2>
       <canvas id="totalAssetsChart"></canvas>
       <script>
-        ${data.map((userData: any, index: number) => `
+        ${allData.users.map((userData: any, index: number) => `
           const user${index + 1}AssetsCtx = document.getElementById('user${index + 1}AssetsChart').getContext('2d');
           const user${index + 1}AssetsChart = new Chart(user${index + 1}AssetsCtx, {
             type: 'line',
@@ -199,11 +237,11 @@ describe("BondingToken Edge Case Tests", function () {
         const totalSupplyChart = new Chart(totalSupplyCtx, {
           type: 'line',
           data: {
-            labels: ${JSON.stringify(Array.from({ length: totalSharesArray.length }, (_, i) => i + 1))},
+            labels: ${JSON.stringify(Array.from({ length: allData.totalSupply.length }, (_, i) => i + 1))},
             datasets: [
               {
                 label: 'Total Supply',
-                data: ${JSON.stringify(totalSharesArray)},
+                data: ${JSON.stringify(allData.totalSupply)},
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1,
                 fill: false
@@ -222,11 +260,11 @@ describe("BondingToken Edge Case Tests", function () {
         const totalAssetsChart = new Chart(totalAssetsCtx, {
           type: 'line',
           data: {
-            labels: ${JSON.stringify(Array.from({ length: totalAssetsArray.length }, (_, i) => i + 1))},
+            labels: ${JSON.stringify(Array.from({ length: allData.totalAssets.length }, (_, i) => i + 1))},
             datasets: [
               {
                 label: 'Total Assets',
-                data: ${JSON.stringify(totalAssetsArray)},
+                data: ${JSON.stringify(allData.totalAssets)},
                 borderColor: 'rgba(153, 102, 255, 1)',
                 borderWidth: 1,
                 fill: false

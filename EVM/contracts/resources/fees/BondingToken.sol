@@ -19,7 +19,7 @@ contract BondingToken is Ownable, ERC4626{
     
     /// Override the deposit function to apply entry fee
     function deposit(uint256 assets, address receiver) public override returns (uint256) {
-        uint256 shares = previewDeposit(assets) - (assets * entryFee) / 100000;
+        uint256 shares = previewDeposit(assets);
         _deposit(_msgSender(), receiver, assets, shares);
         return shares;
     }
@@ -27,8 +27,15 @@ contract BondingToken is Ownable, ERC4626{
     /// Override the redeem function to apply exit fee
     function redeem(uint256 shares, address receiver, address owner) public override returns (uint256) {
         uint256 assets = previewRedeem(shares);
-        uint256 netAssets = assets - (assets * exitFee) / 100000;
-        return super.redeem(netAssets, receiver, owner);
+        return super.redeem(assets, receiver, owner);
+    }
+
+    function previewDeposit(uint assets) public view override returns(uint256){
+        return super.previewDeposit(assets) - (assets * entryFee) / 100000;
+    }
+
+    function previewRedeem(uint shares) public view override returns(uint256){
+        return super.previewRedeem(shares) - (shares * exitFee) / 100000;
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner{

@@ -25,10 +25,11 @@ describe("BondingToken Edge Case Tests", function () {
     return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address, others };
   }
 
-  const entryFees = [0, 100]; // 0%, 1%
-  const exitFees = [0, 100]; // 0%, 1%
+  const entryFees = [0, 100, 1000]; // 0%, 1%
+  const exitFees = [0, 100, 1000]; // 0%, 1%
   const amounts = [
     1n,
+    10n ** 8n, // 100000000 wei
     10n ** 18n, // 1 ether in wei
     100n * 10n ** 18n // 100 ether in wei
   ]; // 1 wei, 1 ether, 100 ether

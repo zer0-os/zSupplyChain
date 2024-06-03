@@ -176,14 +176,14 @@ describe("BondingToken Edge Case Tests", function () {
     </head>
     <body>
       ${allData.users.map((userData: any, index: number) => `
-        <h2>User ${index + 1} Assets Over Time</h2>
+        <h2>User ${index + 1} BT balance Over Time</h2>
         <canvas id="user${index + 1}AssetsChart"></canvas>
-        <h2>User ${index + 1} Shares Over Time</h2>
+        <h2>User ${index + 1} RT balance Over Time</h2>
         <canvas id="user${index + 1}SharesChart"></canvas>
       `).join('')}
-      <h2>Total Supply Over Time</h2>
+      <h2>Total BT Supply Over Time</h2>
       <canvas id="totalSupplyChart"></canvas>
-      <h2>Total Assets Over Time</h2>
+      <h2>Total RT Assets Over Time</h2>
       <canvas id="totalAssetsChart"></canvas>
       <script>
         ${allData.users.map((userData: any, index: number) => `

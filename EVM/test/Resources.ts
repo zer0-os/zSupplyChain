@@ -3,7 +3,6 @@ import { expect } from "chai";
 import hre from "hardhat";
 import fs from "fs";
 import { BondingToken } from "../typechain-types/contracts/resources";
-//import { ERC20Token } from "../typechain-types/contracts/test";
 
 const { ethers } = hre;
 
@@ -31,18 +30,18 @@ describe("BondingToken Edge Case Tests", function () {
   const amounts = [
     1n,
     10n ** 18n, // 1 ether in wei
-    100n * 10n ** 18n // 1000 ether in wei
+    100n * 10n ** 18n // 100 ether in wei
   ]; // 1 wei, 1 ether, 100 ether
   const numUsers = [1, 2];
 
   async function getExpectedShares(bondingToken: BondingToken, amount: bigint, feeBasisPoints: number) {
-    const netAmount = amount - (amount * BigInt(feeBasisPoints) / 100000n);
+    const netAmount = amount - (amount * BigInt(feeBasisPoints) / 10000n);
     return await bondingToken.convertToShares(netAmount);
   }
 
   async function getExpectedAssets(bondingToken: BondingToken, shares: bigint, feeBasisPoints: number) {
     const grossAssets = await bondingToken.convertToAssets(shares);
-    const fee = grossAssets * BigInt(feeBasisPoints) / 100000n;
+    const fee = grossAssets * BigInt(feeBasisPoints) / 10000n;
     return grossAssets - fee;
   }
 
@@ -62,12 +61,9 @@ describe("BondingToken Edge Case Tests", function () {
             let totalAssets = 0n;
             let totalShares = 0n;
 
-            const data = {
-              user1: { assets: [] as string[], shares: [] as string[] },
-              user2: { assets: [] as string[], shares: [] as string[] },
-              totalSupply: [] as string[],
-              totalAssets: [] as string[],
-            };
+            const data = users.map(() => ({ assets: [] as string[], shares: [] as string[] }));
+            const totalAssetsArray: string[] = [];
+            const totalSharesArray: string[] = [];
 
             for (let i = 0; i < users.length; i++) {
               const user = users[i];
@@ -81,22 +77,17 @@ describe("BondingToken Edge Case Tests", function () {
 
               await expect(bondingToken.connect(user).deposit(amount, userAddress))
                 .to.emit(bondingToken, 'Deposit')
-                .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 100000n), expectedShares);
+                .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 10000n), expectedShares);
 
               const contractBalanceAfter = await reserveToken.balanceOf(bondingTokenAddress);
               const actualShares = await bondingToken.balanceOf(userAddress);
               totalAssets = contractBalanceAfter;
-              totalShares += expectedShares; // Updated to correctly track the total shares
+              totalShares += expectedShares;
 
-              if (i === 0) {
-                data.user1.assets.push(contractBalanceAfter.toString());
-                data.user1.shares.push(actualShares.toString());
-              } else if (i === 1) {
-                data.user2.assets.push(contractBalanceAfter.toString());
-                data.user2.shares.push(actualShares.toString());
-              }
-              data.totalSupply.push(totalShares.toString());
-              data.totalAssets.push(totalAssets.toString());
+              data[i].assets.push(contractBalanceAfter.toString());
+              data[i].shares.push(actualShares.toString());
+              totalAssetsArray.push(totalAssets.toString());
+              totalSharesArray.push(totalShares.toString());
 
               expect(contractBalanceAfter).to.equal(totalAssets);
               expect(actualShares).to.equal(expectedShares);
@@ -119,36 +110,24 @@ describe("BondingToken Edge Case Tests", function () {
               const actualAssets = contractBalanceBefore - contractBalanceAfter;
               totalAssets = contractBalanceAfter;
 
-              if (i === 0) {
-                data.user1.assets.push(contractBalanceAfter.toString());
-                data.user1.shares.push((await bondingToken.balanceOf(userAddress)).toString());
-              } else if (i === 1) {
-                data.user2.assets.push(contractBalanceAfter.toString());
-                data.user2.shares.push((await bondingToken.balanceOf(userAddress)).toString());
-              }
-              data.totalSupply.push(totalShares.toString());
-              data.totalAssets.push(totalAssets.toString());
+              data[i].assets.push(contractBalanceAfter.toString());
+              data[i].shares.push((await bondingToken.balanceOf(userAddress)).toString());
+              totalAssetsArray.push(totalAssets.toString());
+              totalSharesArray.push(totalShares.toString());
 
               expect(actualAssets).to.equal(expectedAssets);
               expect(contractBalanceAfter).to.equal(totalAssets);
             }
 
             // Generate the HTML file for the plots
-            generateHTML(data, entryFee, exitFee, amount, userCount);
+            generateHTML(data, entryFee, exitFee, amount, userCount, totalSharesArray, totalAssetsArray);
           });
         }
       }
     }
   }
 
-  function generateHTML(data: any, entryFee: number, exitFee: number, amount: bigint, userCount: number) {
-    const user1Assets = data.user1.assets;
-    const user1Shares = data.user1.shares;
-    const user2Assets = data.user2.assets;
-    const user2Shares = data.user2.shares;
-    const totalSupply = data.totalSupply;
-    const totalAssets = data.totalAssets;
-
+  function generateHTML(data: any, entryFee: number, exitFee: number, amount: bigint, userCount: number, totalSharesArray: string[], totalAssetsArray: string[]) {
     const html = `
     <!DOCTYPE html>
     <html>
@@ -157,120 +136,74 @@ describe("BondingToken Edge Case Tests", function () {
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
-      <h2>User 1 Assets Over Time</h2>
-      <canvas id="user1AssetsChart"></canvas>
-      <h2>User 1 Shares Over Time</h2>
-      <canvas id="user1SharesChart"></canvas>
-      <h2>User 2 Assets Over Time</h2>
-      <canvas id="user2AssetsChart"></canvas>
-      <h2>User 2 Shares Over Time</h2>
-      <canvas id="user2SharesChart"></canvas>
+      ${data.map((userData: any, index: number) => `
+        <h2>User ${index + 1} Assets Over Time</h2>
+        <canvas id="user${index + 1}AssetsChart"></canvas>
+        <h2>User ${index + 1} Shares Over Time</h2>
+        <canvas id="user${index + 1}SharesChart"></canvas>
+      `).join('')}
       <h2>Total Supply Over Time</h2>
       <canvas id="totalSupplyChart"></canvas>
       <h2>Total Assets Over Time</h2>
       <canvas id="totalAssetsChart"></canvas>
       <script>
-        const user1AssetsCtx = document.getElementById('user1AssetsChart').getContext('2d');
-        const user1AssetsChart = new Chart(user1AssetsCtx, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(Array.from({ length: user1Assets.length }, (_, i) => i + 1))},
-            datasets: [
-              {
-                label: 'User 1 Assets',
-                data: ${JSON.stringify(user1Assets)},
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: false
+        ${data.map((userData: any, index: number) => `
+          const user${index + 1}AssetsCtx = document.getElementById('user${index + 1}AssetsChart').getContext('2d');
+          const user${index + 1}AssetsChart = new Chart(user${index + 1}AssetsCtx, {
+            type: 'line',
+            data: {
+              labels: ${JSON.stringify(Array.from({ length: userData.assets.length }, (_, i) => i + 1))},
+              datasets: [
+                {
+                  label: 'User ${index + 1} Assets',
+                  data: ${JSON.stringify(userData.assets)},
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  borderWidth: 1,
+                  fill: false
+                }
+              ]
+            },
+            options: {
+              scales: {
+                x: { beginAtZero: true },
+                y: { beginAtZero: true }
               }
-            ]
-          },
-          options: {
-            scales: {
-              x: { beginAtZero: true },
-              y: { beginAtZero: true }
             }
-          }
-        });
+          });
 
-        const user1SharesCtx = document.getElementById('user1SharesChart').getContext('2d');
-        const user1SharesChart = new Chart(user1SharesCtx, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(Array.from({ length: user1Shares.length }, (_, i) => i + 1))},
-            datasets: [
-              {
-                label: 'User 1 Shares',
-                data: ${JSON.stringify(user1Shares)},
-                borderColor: 'rgba(153, 102, 255, 1)',
-                borderWidth: 1,
-                fill: false
+          const user${index + 1}SharesCtx = document.getElementById('user${index + 1}SharesChart').getContext('2d');
+          const user${index + 1}SharesChart = new Chart(user${index + 1}SharesCtx, {
+            type: 'line',
+            data: {
+              labels: ${JSON.stringify(Array.from({ length: userData.shares.length }, (_, i) => i + 1))},
+              datasets: [
+                {
+                  label: 'User ${index + 1} Shares',
+                  data: ${JSON.stringify(userData.shares)},
+                  borderColor: 'rgba(153, 102, 255, 1)',
+                  borderWidth: 1,
+                  fill: false
+                }
+              ]
+            },
+            options: {
+              scales: {
+                x: { beginAtZero: true },
+                y: { beginAtZero: true }
               }
-            ]
-          },
-          options: {
-            scales: {
-              x: { beginAtZero: true },
-              y: { beginAtZero: true }
             }
-          }
-        });
-
-        const user2AssetsCtx = document.getElementById('user2AssetsChart').getContext('2d');
-        const user2AssetsChart = new Chart(user2AssetsCtx, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(Array.from({ length: user2Assets.length }, (_, i) => i + 1))},
-            datasets: [
-              {
-                label: 'User 2 Assets',
-                data: ${JSON.stringify(user2Assets)},
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            scales: {
-              x: { beginAtZero: true },
-              y: { beginAtZero: true }
-            }
-          }
-        });
-
-        const user2SharesCtx = document.getElementById('user2SharesChart').getContext('2d');
-        const user2SharesChart = new Chart(user2SharesCtx, {
-          type: 'line',
-          data: {
-            labels: ${JSON.stringify(Array.from({ length: user2Shares.length }, (_, i) => i + 1))},
-            datasets: [
-              {
-                label: 'User 2 Shares',
-                data: ${JSON.stringify(user2Shares)},
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            scales: {
-              x: { beginAtZero: true },
-              y: { beginAtZero: true }
-            }
-          }
-        });
+          });
+        `).join('')}
 
         const totalSupplyCtx = document.getElementById('totalSupplyChart').getContext('2d');
         const totalSupplyChart = new Chart(totalSupplyCtx, {
           type: 'line',
           data: {
-            labels: ${JSON.stringify(Array.from({ length: totalSupply.length }, (_, i) => i + 1))},
+            labels: ${JSON.stringify(Array.from({ length: totalSharesArray.length }, (_, i) => i + 1))},
             datasets: [
               {
                 label: 'Total Supply',
-                data: ${JSON.stringify(totalSupply)},
+                data: ${JSON.stringify(totalSharesArray)},
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1,
                 fill: false
@@ -289,11 +222,11 @@ describe("BondingToken Edge Case Tests", function () {
         const totalAssetsChart = new Chart(totalAssetsCtx, {
           type: 'line',
           data: {
-            labels: ${JSON.stringify(Array.from({ length: totalAssets.length }, (_, i) => i + 1))},
+            labels: ${JSON.stringify(Array.from({ length: totalAssetsArray.length }, (_, i) => i + 1))},
             datasets: [
               {
                 label: 'Total Assets',
-                data: ${JSON.stringify(totalAssets)},
+                data: ${JSON.stringify(totalAssetsArray)},
                 borderColor: 'rgba(153, 102, 255, 1)',
                 borderWidth: 1,
                 fill: false

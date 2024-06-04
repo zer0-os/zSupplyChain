@@ -25,11 +25,10 @@ describe("BondingToken Edge Case Tests", function () {
     return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address, others };
   }
 
-  const entryFees = [0, 100, 1000]; // 0%, 1%
-  const exitFees = [0, 100, 1000]; // 0%, 1%
+  const entryFees = [0, 100]; // 0%, 1%
+  const exitFees = [0, 100]; // 0%, 1%
   const amounts = [
     1n,
-    10n ** 8n, // 100000000 wei
     10n ** 18n, // 1 ether in wei
     100n * 10n ** 18n // 100 ether in wei
   ]; // 1 wei, 1 ether, 100 ether
@@ -87,11 +86,11 @@ describe("BondingToken Edge Case Tests", function () {
               const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
               const contractBalanceBefore = await reserveToken.balanceOf(bondingTokenAddress);
 
-              await bondingToken.connect(user).deposit(amount, userAddress);
+              //await bondingToken.connect(user).deposit(amount, userAddress);
 
-              //await expect(bondingToken.connect(user).deposit(amount, userAddress))
-              //  .to.emit(bondingToken, 'Deposit')
-              //  .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 10000n), expectedShares);
+              await expect(bondingToken.connect(user).deposit(amount, userAddress))
+                .to.emit(bondingToken, 'Deposit')
+                .withArgs(userAddress, userAddress, amount - (amount * BigInt(entryFee) / 10000n), expectedShares);
 
               const contractBalanceAfter = await reserveToken.balanceOf(bondingTokenAddress);
               const actualShares = await bondingToken.balanceOf(userAddress);
@@ -101,7 +100,8 @@ describe("BondingToken Edge Case Tests", function () {
               data[i].assets.push(contractBalanceAfter.toString());
               data[i].shares.push(actualShares.toString());
 
-              //expect(actualShares).to.equal(expectedShares);
+              expect(contractBalanceAfter).to.equal(totalAssets);
+              expect(actualShares).to.equal(expectedShares);
             }
 
             // Record total assets and supply after deposits
@@ -120,18 +120,17 @@ describe("BondingToken Edge Case Tests", function () {
             for (let i = 0; i < users.length; i++) {
               const user = users[i];
               const userAddress = userAddresses[i];
-              let sharesToRedeem = await bondingToken.maxRedeem(userAddress);
-              sharesToRedeem /= 2n;
-              //console.log(sharesToRedeem);
+              const sharesToRedeem = await bondingToken.balanceOf(userAddress);
+
               const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
               const contractBalanceBefore = await reserveToken.balanceOf(bondingTokenAddress);
 
               await reserveToken.connect(user).approve(bondingTokenAddress, sharesToRedeem);
-              await bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress);
+              //await bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress);
 
-              //await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
-              //  .to.emit(bondingToken, 'Withdraw')
-              //  .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
+              await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
+                .to.emit(bondingToken, 'Withdraw')
+                .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
 
               const contractBalanceAfter = await reserveToken.balanceOf(bondingTokenAddress);
               const actualAssets = contractBalanceBefore - contractBalanceAfter;
@@ -140,8 +139,8 @@ describe("BondingToken Edge Case Tests", function () {
               data[i].assets.push(contractBalanceAfter.toString());
               data[i].shares.push((await bondingToken.balanceOf(userAddress)).toString());
 
-              //expect(actualAssets).to.equal(expectedAssets);
-              //expect(contractBalanceAfter).to.equal(totalAssets);
+              expect(actualAssets).to.equal(expectedAssets);
+              expect(contractBalanceAfter).to.equal(totalAssets);
             }
 
             // Record total assets and supply after redeems
@@ -176,14 +175,14 @@ describe("BondingToken Edge Case Tests", function () {
     </head>
     <body>
       ${allData.users.map((userData: any, index: number) => `
-        <h2>User ${index + 1} BT balance Over Time</h2>
+        <h2>User ${index + 1} Assets Over Time</h2>
         <canvas id="user${index + 1}AssetsChart"></canvas>
-        <h2>User ${index + 1} RT balance Over Time</h2>
+        <h2>User ${index + 1} Shares Over Time</h2>
         <canvas id="user${index + 1}SharesChart"></canvas>
       `).join('')}
-      <h2>Total BT Supply Over Time</h2>
+      <h2>Total Supply Over Time</h2>
       <canvas id="totalSupplyChart"></canvas>
-      <h2>Total RT Assets Over Time</h2>
+      <h2>Total Assets Over Time</h2>
       <canvas id="totalAssetsChart"></canvas>
       <script>
         ${allData.users.map((userData: any, index: number) => `

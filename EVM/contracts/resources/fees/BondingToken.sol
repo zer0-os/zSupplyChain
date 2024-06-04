@@ -16,19 +16,6 @@ contract BondingToken is Ownable, ERC4626{
         entryFee = entryFeeBasisPoints;
         exitFee = exitFeeBasisPoints;
     }
-    
-    /// Override the deposit function to apply entry fee
-    function deposit(uint256 assets, address receiver) public override returns (uint256) {
-        uint256 shares = previewDeposit(assets);
-        _deposit(_msgSender(), receiver, assets, shares);
-        return shares;
-    }
-
-    /// Override the redeem function to apply exit fee
-    function redeem(uint256 shares, address receiver, address owner) public override returns (uint256) {
-        uint256 assets = previewRedeem(shares);
-        return super.redeem(assets, receiver, owner);
-    }
 
     function previewDeposit(uint assets) public view override returns(uint256){
         return super.previewDeposit(assets) - (assets * entryFee) / 100000;

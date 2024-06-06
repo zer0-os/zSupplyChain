@@ -18,11 +18,13 @@ contract BondingToken is Ownable, ERC4626{
     }
 
     function previewDeposit(uint assets) public view override returns(uint256){
-        return super.previewDeposit(assets) - (assets * entryFee) / 100000;
+        uint shares = super.previewDeposit(assets);
+        return shares - (shares * entryFee) / 100000;
     }
 
     function previewRedeem(uint shares) public view override returns(uint256){
-        return super.previewRedeem(shares) - (shares * exitFee) / 100000;
+        uint assets = super.previewRedeem(shares); 
+        return assets - (assets * exitFee) / 100000;
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner{

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-contract LogarithmicBondingToken is Ownable, ERC4626 {
+contract BondingTokenLogarithmic is Ownable, ERC4626 {
     uint entryFee; // entry fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
     uint exitFee; // exit fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
 
@@ -19,11 +19,13 @@ contract LogarithmicBondingToken is Ownable, ERC4626 {
     }
 
     function previewDeposit(uint assets) public view override returns(uint256){
-        return super.previewDeposit(assets) - (assets * entryFee) / 100000;
+        uint shares = super.previewDeposit(assets);
+        return shares - (shares * entryFee) / 100000;
     }
 
     function previewRedeem(uint shares) public view override returns(uint256){
-        return super.previewRedeem(shares) - (shares * exitFee) / 100000;
+        uint assets = super.previewRedeem(shares); 
+        return assets - (assets * exitFee) / 100000;
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
@@ -31,7 +33,7 @@ contract LogarithmicBondingToken is Ownable, ERC4626 {
         if (totalSupply_ == 0) {
             return assets;
         }
-        return Math.mulDiv(assets, totalSupply_, Math.log2(totalAssets() + 1) + 1, rounding); // using log2 for example
+        return Math.mulDiv(assets, totalSupply_, Math.log2(totalAssets() + 1) + 1, rounding);
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {
@@ -39,7 +41,7 @@ contract LogarithmicBondingToken is Ownable, ERC4626 {
         if (totalSupply_ == 0) {
             return shares;
         }
-        return Math.mulDiv(shares, Math.log2(totalAssets() + 1) + 1, totalSupply_, rounding); // using log2 for example
+        return Math.mulDiv(shares, Math.log2(totalAssets() + 1) + 1, totalSupply_, rounding);
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external {

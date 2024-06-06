@@ -1,0 +1,269 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>ERC4626Logarithmic Test Results</title>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        </head>
+        <body>
+          
+            <h2>User 1 Assets Over Time</h2>
+            <canvas id="user1AssetsChart"></canvas>
+            <h2>User 1 Shares Over Time</h2>
+            <canvas id="user1SharesChart"></canvas>
+          
+            <h2>User 2 Assets Over Time</h2>
+            <canvas id="user2AssetsChart"></canvas>
+            <h2>User 2 Shares Over Time</h2>
+            <canvas id="user2SharesChart"></canvas>
+          
+            <h2>User 3 Assets Over Time</h2>
+            <canvas id="user3AssetsChart"></canvas>
+            <h2>User 3 Shares Over Time</h2>
+            <canvas id="user3SharesChart"></canvas>
+          
+            <h2>User 4 Assets Over Time</h2>
+            <canvas id="user4AssetsChart"></canvas>
+            <h2>User 4 Shares Over Time</h2>
+            <canvas id="user4SharesChart"></canvas>
+          
+          <h2>Total Supply Over Time</h2>
+          <canvas id="totalSupplyChart"></canvas>
+          <h2>Total Assets Over Time</h2>
+          <canvas id="totalAssetsChart"></canvas>
+          <script>
+            
+              const user1AssetsCtx = document.getElementById('user1AssetsChart').getContext('2d');
+              const user1AssetsChart = new Chart(user1AssetsCtx, {
+                type: 'line',
+                data: {
+                  labels: [1,2,3,4,5,6,7],
+                  datasets: [
+                    {
+                      label: 'User 1 Assets',
+                      data: ["960805780947986022401","993437491273180217346","996421791993918356483","996421791993918356427","996421791993918356408","996421791993918356357","998775356350878653830"],
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+
+              const user1SharesCtx = document.getElementById('user1SharesChart').getContext('2d');
+              const user1SharesChart = new Chart(user1SharesCtx, {
+                type: 'line',
+                data: {
+                  labels: [1,2,3,4,5,6,7],
+                  datasets: [
+                    {
+                      label: 'User 1 Shares',
+                      data: ["960805780947986022401","447896227466666677156075274054370442327","19095100492066669690171677352139190949364484828581383710","3582806986451682171185515679400232629675291143653984885","2605924754830676809329522563115726419175151656671808116","691436050457510699048606212088897842023994688384174707","23247703478202842368069867291706375913629477776644516135609844518894505"],
+                      borderColor: 'rgba(153, 102, 255, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+            
+              const user2AssetsCtx = document.getElementById('user2AssetsChart').getContext('2d');
+              const user2AssetsChart = new Chart(user2AssetsCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 2 Assets',
+                      data: [],
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+
+              const user2SharesCtx = document.getElementById('user2SharesChart').getContext('2d');
+              const user2SharesChart = new Chart(user2SharesCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 2 Shares',
+                      data: [],
+                      borderColor: 'rgba(153, 102, 255, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+            
+              const user3AssetsCtx = document.getElementById('user3AssetsChart').getContext('2d');
+              const user3AssetsChart = new Chart(user3AssetsCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 3 Assets',
+                      data: [],
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+
+              const user3SharesCtx = document.getElementById('user3SharesChart').getContext('2d');
+              const user3SharesChart = new Chart(user3SharesCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 3 Shares',
+                      data: [],
+                      borderColor: 'rgba(153, 102, 255, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+            
+              const user4AssetsCtx = document.getElementById('user4AssetsChart').getContext('2d');
+              const user4AssetsChart = new Chart(user4AssetsCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 4 Assets',
+                      data: [],
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+
+              const user4SharesCtx = document.getElementById('user4SharesChart').getContext('2d');
+              const user4SharesChart = new Chart(user4SharesCtx, {
+                type: 'line',
+                data: {
+                  labels: [],
+                  datasets: [
+                    {
+                      label: 'User 4 Shares',
+                      data: [],
+                      borderColor: 'rgba(153, 102, 255, 1)',
+                      borderWidth: 1,
+                      fill: false
+                    }
+                  ]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                  }
+                }
+              });
+            
+
+            const totalSupplyCtx = document.getElementById('totalSupplyChart').getContext('2d');
+            const totalSupplyChart = new Chart(totalSupplyCtx, {
+              type: 'line',
+              data: {
+                labels: [1],
+                datasets: [
+                  {
+                    label: 'Total Supply',
+                    data: ["691436050457510699048606212088897842023994688384174707"],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: false
+                  }
+                ]
+              },
+              options: {
+                scales: {
+                  x: { beginAtZero: true },
+                  y: { beginAtZero: true }
+                }
+              }
+            });
+
+            const totalAssetsCtx = document.getElementById('totalAssetsChart').getContext('2d');
+            const totalAssetsChart = new Chart(totalAssetsCtx, {
+              type: 'line',
+              data: {
+                labels: [1],
+                datasets: [
+                  {
+                    label: 'Total Assets',
+                    data: ["996421791993918356357"],
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1,
+                    fill: false
+                  }
+                ]
+              },
+              options: {
+                scales: {
+                  x: { beginAtZero: true },
+                  y: { beginAtZero: true }
+                }
+              }
+            });
+          </script>
+        </body>
+        </html>
+        

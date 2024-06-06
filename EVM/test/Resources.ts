@@ -15,7 +15,7 @@ const contractNames = [
 
 describe("BondingToken Edge Case Tests", function () {
   for (const contract of contractNames) {
-    describe(`${contract.name} tests`, function () {
+    describe(`${contract.name} simulation tests`, function () {
       async function deploy() {
         const [deployer, user, user1, user2, user3] = await hre.ethers.getSigners();
         const userAddress = await user.getAddress();
@@ -55,11 +55,13 @@ describe("BondingToken Edge Case Tests", function () {
       const allData: {
         users: { assets: string[], shares: string[] }[],
         totalSupply: string[],
-        totalAssets: string[]
+        totalAssets: string[],
+        tokenPrices: string[] // Added array for token prices
       } = {
         users: [],
         totalSupply: [],
-        totalAssets: []
+        totalAssets: [],
+        tokenPrices: [] // Initialize tokenPrices array
       };
 
       let totalAssets = 0n;
@@ -114,7 +116,6 @@ describe("BondingToken Edge Case Tests", function () {
                   for (let i = 0; i < 3; i++) { 
                     const balance = await reserveToken.balanceOf(userAddress);
                     const amount = getRandomAmount(1n, balance - 1n);
-                    //console.log(amount);
                     const previousBTBalance = await bondingToken.balanceOf(userAddress);
 
                     await reserveToken.connect(user).approve(bondingTokenAddress, amount);
@@ -134,6 +135,10 @@ describe("BondingToken Edge Case Tests", function () {
                     allData.users[userIndex].shares.push(actualShares.toString());
 
                     expect(actualShares).to.equal(expectedShares);
+
+                    // Calculate and record token price
+                    const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
+                    allData.tokenPrices.push(tokenPrice.toString());
                   }
                 }
 
@@ -159,69 +164,10 @@ describe("BondingToken Edge Case Tests", function () {
                     allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
 
                     expect(actualAssets).to.equal(expectedAssets);
-                  }
-                }
 
-                allData.totalSupply.push(totalShares.toString());
-                allData.totalAssets.push(totalAssets.toString());
-              });
-
-              //should verify edge cases - doesn't track data for graph
-              it(`should check edge cases with exact deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
-                const selectedUsers = users.slice(0, userCount);
-                const deposits = [1n, 2n, 3n];//[10n, 10n**2n, 10n**3n];
-
-                for (const user of selectedUsers) {
-                  const userAddress = await user.getAddress();
-
-                  for (let i = 0; i < 3; i++) { 
-                    const amount = deposits[i];
-                    //const balance = await reserveToken.connect(deployer).mint(userAddress, amount);
-                    const previousBTBalance = await bondingToken.balanceOf(userAddress);
-
-                    await reserveToken.mint(userAddress, amount);
-                    await reserveToken.connect(user).approve(bondingTokenAddress, amount);
-
-                    const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
-
-                    await expect(bondingToken.connect(user).deposit(amount, userAddress))
-                      .to.emit(bondingToken, 'Deposit')
-                      .withArgs(userAddress, userAddress, amount, expectedShares);
-
-                    const actualShares = await bondingToken.balanceOf(userAddress) - previousBTBalance;
-                    totalAssets += amount;
-                    totalShares += expectedShares;
-
-                    const userIndex = users.indexOf(user);
-                    allData.users[userIndex].assets.push(totalAssets.toString());
-                    allData.users[userIndex].shares.push(actualShares.toString());
-
-                    expect(actualShares).to.equal(expectedShares);
-                  }
-                }
-
-                for (const user of selectedUsers) {
-                  const userAddress = await user.getAddress();
-
-                  for (let i = 0; i < 1; i++) { // Assuming you want 3 random redeems per user
-                    const balance = await bondingToken.balanceOf(userAddress);
-                    const sharesToRedeem = balance; //getRandomAmount(1n, balance - 1n);
-                    const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
-                    const previousRTBalance = await reserveToken.balanceOf(user);
-                    
-                    await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
-                      .to.emit(bondingToken, 'Withdraw')
-                      .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
-
-                    const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
-                    totalAssets -= expectedAssets;
-                    totalShares -= sharesToRedeem;
-
-                    const userIndex = users.indexOf(user);
-                    allData.users[userIndex].assets.push(totalAssets.toString());
-                    allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
-
-                    expect(actualAssets).to.equal(expectedAssets);
+                    // Calculate and record token price
+                    const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
+                    allData.tokenPrices.push(tokenPrice.toString());
                   }
                 }
 
@@ -257,6 +203,8 @@ describe("BondingToken Edge Case Tests", function () {
           <canvas id="totalSupplyChart"></canvas>
           <h2>Total Assets Over Time</h2>
           <canvas id="totalAssetsChart"></canvas>
+          <h2>Token Price Over Time</h2>
+          <canvas id="tokenPriceChart"></canvas>
           <script>
             ${allData.users.map((userData: any, index: number) => `
               const user${index + 1}AssetsCtx = document.getElementById('user${index + 1}AssetsChart').getContext('2d');
@@ -351,6 +299,29 @@ describe("BondingToken Edge Case Tests", function () {
                 }
               }
             });
+
+            const tokenPriceCtx = document.getElementById('tokenPriceChart').getContext('2d');
+            const tokenPriceChart = new Chart(tokenPriceCtx, {
+              type: 'line',
+              data: {
+                labels: ${JSON.stringify(Array.from({ length: allData.tokenPrices.length }, (_, i) => i + 1))},
+                datasets: [
+                  {
+                    label: 'Token Price',
+                    data: ${JSON.stringify(allData.tokenPrices)},
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    fill: false
+                  }
+                ]
+              },
+              options: {
+                scales: {
+                  x: { beginAtZero: true },
+                  y: { beginAtZero: true }
+                }
+              }
+            });
           </script>
         </body>
         </html>
@@ -358,6 +329,170 @@ describe("BondingToken Edge Case Tests", function () {
 
         fs.writeFileSync(`test_results_${contractName}.html`, html);
       }
+    });
+
+    describe(`${contract.name} edge case tests`, function () {
+      async function deploy() {
+        const [deployer, user, user1, user2, user3] = await hre.ethers.getSigners();
+        const userAddress = await user.getAddress();
+        const user1Address = await user1.getAddress();
+        const user2Address = await user2.getAddress();
+        const user3Address = await user3.getAddress();
+
+        const reserveTokenFactory = await hre.ethers.getContractFactory("ERC20Token");
+        const reserveToken = await reserveTokenFactory.deploy("Wilder World", "WILD");
+        const reserveTokenAddress = await reserveToken.getAddress();
+
+        const bondingTokenFactory = await hre.ethers.getContractFactory(contract.name);
+        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0);
+        const bondingTokenAddress = await bondingToken.getAddress();
+
+        return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address};
+      }
+
+      function getRandomAmount(min: bigint, max: bigint): bigint {
+        const range = max - min + 1n;
+        const rand = BigInt(Math.floor(Math.random() * Number(range))) + min;
+        return rand;
+      }
+
+      const entryFees = [0, 100]; // 0%, 1%
+      const exitFees = [0, 100]; // 0%, 1%
+      const numUsers = [1, 2, 3, 4];
+
+      async function getExpectedShares(bondingToken: BondingToken, assets: bigint, feeBasisPoints: number) {
+        return await bondingToken.previewDeposit(assets);
+      }
+
+      async function getExpectedAssets(bondingToken: BondingToken, shares: bigint, feeBasisPoints: number) {
+        return await bondingToken.previewRedeem(shares);
+      }
+
+      const allData: {
+        users: { assets: string[], shares: string[] }[],
+        totalSupply: string[],
+        totalAssets: string[],
+        tokenPrices: string[] // Added array for token prices
+      } = {
+        users: [],
+        totalSupply: [],
+        totalAssets: [],
+        tokenPrices: [] // Initialize tokenPrices array
+      };
+
+      let totalAssets = 0n;
+      let totalShares = 0n;
+
+      describe('Verify edge cases', function () {
+        let deployer: Signer;
+        let bondingToken: any;
+        let bondingTokenAddress: string;
+        let reserveToken: ERC20Token;
+        let reserveTokenAddress: string;
+        let users: Signer[];
+        let userAddresses: string[];
+        const initialMintAmount = 1000n * 10n ** 18n; // Mint 1000 ether in wei
+
+        before(async function () {
+          const deployment = await loadFixture(deploy);
+          bondingToken = deployment.bondingToken;
+          bondingTokenAddress = deployment.bondingTokenAddress;
+          reserveToken = deployment.reserveToken;
+          reserveTokenAddress = deployment.reserveTokenAddress;
+          users = [deployment.user, deployment.user1, deployment.user2, deployment.user3];
+          userAddresses = [deployment.userAddress, deployment.user1Address, deployment.user2Address, deployment.user3Address];
+
+          // Mint and approve initial amounts for each user
+          for (const user of users) {
+            const userAddress = await user.getAddress();
+            await reserveToken.mint(userAddress, initialMintAmount);
+            await reserveToken.connect(user).approve(bondingTokenAddress, initialMintAmount);
+          }
+
+          // Initialize allData.users array with correct length
+          users.forEach((_, index) => {
+            allData.users[index] = { assets: [], shares: [] };
+          });
+        });
+        //simulation tests
+        entryFees.forEach(entryFee => {
+          exitFees.forEach(exitFee => {
+            it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+              await bondingToken.setEntryFee(entryFee);
+              await bondingToken.setExitFee(exitFee);
+            });
+            const deposits = [1n, 2n, 3n]; // [10n, 10n**2n, 10n**3n];
+            const redeems = [1n, 2n, 3n];
+            numUsers.forEach(userCount => {
+              // should verify edge cases - doesn't track data for graph
+              it(`should check edge cases with exact deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+                const selectedUsers = users.slice(0, userCount);
+            
+                for (const user of selectedUsers) {
+                  const userAddress = await user.getAddress();
+            
+                  deposits.forEach(deposit => {
+                    it(`deposits ${deposit}`, async function () {
+                      const amount = deposit;
+                      // const balance = await reserveToken.connect(deployer).mint(userAddress, amount);
+                      const previousBTBalance = await bondingToken.balanceOf(userAddress);
+            
+                      await reserveToken.mint(userAddress, amount);
+                      await reserveToken.connect(user).approve(bondingTokenAddress, amount);
+            
+                      const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
+            
+                      await expect(bondingToken.connect(user).deposit(amount, userAddress))
+                        .to.emit(bondingToken, 'Deposit')
+                        .withArgs(userAddress, userAddress, amount, expectedShares);
+            
+                      const actualShares = await bondingToken.balanceOf(userAddress) - previousBTBalance;
+                      totalAssets += amount;
+                      totalShares += expectedShares;
+            
+                      const userIndex = users.indexOf(user);
+                      allData.users[userIndex].assets.push(totalAssets.toString());
+                      allData.users[userIndex].shares.push(actualShares.toString());
+            
+                      expect(actualShares).to.equal(expectedShares);
+                    });
+                  });
+            
+                  redeems.forEach(redeem => {
+                    it(`redeems ${redeem}`, async function () {
+                      const balance = await bondingToken.balanceOf(userAddress);
+                      const sharesToRedeem = redeem; // Adjust the logic as needed
+                      const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
+                      const previousRTBalance = await reserveToken.balanceOf(userAddress);
+            
+                      await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
+                        .to.emit(bondingToken, 'Withdraw')
+                        .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
+            
+                      const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
+                      totalAssets -= expectedAssets;
+                      totalShares -= sharesToRedeem;
+            
+                      const userIndex = users.indexOf(user);
+                      allData.users[userIndex].assets.push(totalAssets.toString());
+                      allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
+            
+                      expect(actualAssets).to.equal(expectedAssets);
+
+                      // Calculate and record token price
+                      const tokenPrice = (await bondingToken.previewDeposit(10n ** 18n)) / 10n ** 18n;
+                      allData.tokenPrices.push(tokenPrice.toString());
+                    });
+                  });
+                }
+            
+                allData.totalSupply.push(totalShares.toString());
+                allData.totalAssets.push(totalAssets.toString());
+              });
+            });            
+          });
+        });      
+      });
     });
   }
 });

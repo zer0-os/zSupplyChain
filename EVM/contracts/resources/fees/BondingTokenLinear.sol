@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
-contract BondingToken is Ownable, ERC4626{
+contract BondingTokenLinear is Ownable, ERC4626{
     uint entryFee; /// entry fee in basis points. 0 to 100000. 1 => 0.001%. 100000 => 100% 
     uint exitFee; /// exit fee in basis points. must be > 0. 1 => 0.001%. 100000 => 100%
 

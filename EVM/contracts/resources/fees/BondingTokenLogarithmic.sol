@@ -29,11 +29,11 @@ contract BondingTokenLogarithmic is Ownable, ERC4626 {
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
-        return Math.mulDiv(assets, totalSupply(), Math.log2(totalAssets() + 1) + 1, rounding);
+        return Math.mulDiv(assets, totalSupply(), Math.log2(totalAssets()) + 1, rounding);
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {
-        return Math.mulDiv(shares, Math.log2(totalAssets() + 1) + 1, totalSupply(), rounding);
+        return Math.mulDiv(shares, Math.log2(totalAssets()) + 1, totalSupply(), rounding);
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external {

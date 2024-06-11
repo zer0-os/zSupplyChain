@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract BondingTokenQuadratic is Ownable, ERC4626 {
+    using Math for uint;
+
     uint entryFee; // entry fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
     uint exitFee; // exit fee in basis points from 1 to 100000. 1 => 0.001%. 100000 => 100%
 
@@ -29,19 +31,11 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
-        uint256 totalSupply_ = totalSupply();
-        if (totalSupply_ == 0) {
-            return assets;
-        }
-        return Math.mulDiv(assets, totalSupply_, (totalAssets() + 1)**2, rounding);
+        return assets * super._convertToShares(assets, rounding);
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {
-        uint256 totalSupply_ = totalSupply();
-        if (totalSupply_ == 0) {
-            return shares;
-        }
-        return Math.mulDiv(shares, (totalAssets() + 1)**2, totalSupply_, rounding);
+        return Math.sqrt(super._convertToAssets(shares, rounding));
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner(){

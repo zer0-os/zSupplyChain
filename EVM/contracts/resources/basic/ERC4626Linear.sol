@@ -35,7 +35,7 @@ contract ERC4626Linear is Ownable, ERC4626 {
     }
 
     function previewRedeem(uint shares) public view override returns (uint256) {
-        uint assets = super.previewRedeem(shares);
+        uint assets = 100000*super.previewRedeem(shares)/rate;
         return assets - (assets * exitFee) / 100000;
     }
 

@@ -10,8 +10,8 @@ const { ethers } = hre;
 
 const contractNames = [
   { name: "BondingTokenLinear", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD"}];
-  { name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
-  { name: "BondingTokenLogarithmic", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" }];
+  //{ name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
+  //{ name: "BondingTokenLogarithmic", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" }];
 
 describe("BondingToken Tests", function () {
   for (const contract of contractNames) {
@@ -40,8 +40,8 @@ describe("BondingToken Tests", function () {
         return rand;
       }
 
-      const entryFees = [0, 100, 1000]; // 0%, 1%, 10%
-      const exitFees = [0, 100, 1000]; // 0%, 1%, 10%
+      const entryFees = [0, 100, 1000, 10000]; // 0%, .1%, 1%, 10%
+      const exitFees = [0, 100, 1000, 10000]; // 0%, .1%, 1%, 10%
       const numUsers = [1, 2, 3, 4];
 
       async function getExpectedShares(bondingToken: BondingTokenLinear, assets: bigint, feeBasisPoints: number) {
@@ -56,12 +56,12 @@ describe("BondingToken Tests", function () {
         users: { assets: string[], shares: string[] }[],
         totalSupply: string[],
         totalAssets: string[],
-        tokenPrices: string[] // Added array for token prices
+        tokenPrices: string[]
       } = {
         users: [],
         totalSupply: [],
         totalAssets: [],
-        tokenPrices: [] // Initialize tokenPrices array
+        tokenPrices: []
       };
 
       let totalAssets = 0n;

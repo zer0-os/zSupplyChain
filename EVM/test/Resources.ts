@@ -10,10 +10,10 @@ const { ethers } = hre;
 
 const contractNames = [
   { name: "BondingTokenLinear", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD"}];
-  //{ name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
-  //{ name: "BondingTokenLogarithmic", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" }];
+  { name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
+  { name: "BondingTokenLogarithmic", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" }];
 
-describe("BondingToken Edge Case Tests", function () {
+describe("BondingToken Tests", function () {
   for (const contract of contractNames) {
     describe(`${contract.name} simulation tests`, function () {
       async function deploy() {

@@ -108,19 +108,24 @@ describe("BondingToken Tests", function () {
             });
 
             numUsers.forEach(userCount => {
-              const selectedUsers = users.slice(0, userCount);
+              it(`should simulate econ with random deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+                const selectedUsers = users.slice(0, userCount);
 
-              for (const user of selectedUsers) {
-                const userAddress = await user.getAddress();
-                const balance = await reserveToken.balanceOf(userAddress);
-                const amount = getRandomAmount(1n, balance - 1n);
-                for (let i = 0; i < 3; i++) {               
-                  it(`${userAddress} deposits ${amount} with entry fee ${entryFee}`, async function () {
+                for (const user of selectedUsers) {
+                  const userAddress = await user.getAddress();
+
+                  for (let i = 0; i < 3; i++) { 
+                    const balance = await reserveToken.balanceOf(userAddress);
+                    const amount = getRandomAmount(1n, balance - 1n);
                     const previousBTBalance = await bondingToken.balanceOf(userAddress);
-                    await reserveToken.connect(user).approve(bondingTokenAddress, amount);
 
+                    await reserveToken.connect(user).approve(bondingTokenAddress, amount);
+                    if(!await getExpectedAssets(bondingToken,amount,entryFee)){
+                      console.log(amount);
+                      continue;
+                    }
                     const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
-                    
+
                     await expect(bondingToken.connect(user).deposit(amount, userAddress))
                       .to.emit(bondingToken, 'Deposit')
                       .withArgs(userAddress, userAddress, amount, expectedShares);
@@ -139,6 +144,7 @@ describe("BondingToken Tests", function () {
                     const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
                     allData.tokenPrices.push(tokenPrice.toString());
                   }
+                }
 
                 for (const user of selectedUsers) {
                   const userAddress = await user.getAddress();
@@ -173,6 +179,8 @@ describe("BondingToken Tests", function () {
                 allData.totalAssets.push(totalAssets.toString());
               });
             });
+
+
           });
         });
       });

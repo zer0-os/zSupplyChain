@@ -9,8 +9,8 @@ import { ERC20Token } from "../typechain-types/contracts/mock";
 const { ethers } = hre;
 
 const contractNames = [
-  { name: "BondingTokenLinear", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD"}];
-  //{ name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
+  { name: "BondingTokenLinear", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD"},
+  { name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }];
   //{ name: "BondingTokenLogarithmic", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" }];
 
 describe("BondingToken Tests", function () {
@@ -30,7 +30,7 @@ describe("BondingToken Tests", function () {
         const bondingTokenFactory = await hre.ethers.getContractFactory(contract.name);
         const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0);
         const bondingTokenAddress = await bondingToken.getAddress();
-
+        
         return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address};
       }
 
@@ -108,24 +108,19 @@ describe("BondingToken Tests", function () {
             });
 
             numUsers.forEach(userCount => {
-              it(`should simulate econ with random deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
-                const selectedUsers = users.slice(0, userCount);
+              const selectedUsers = users.slice(0, userCount);
 
-                for (const user of selectedUsers) {
-                  const userAddress = await user.getAddress();
-
-                  for (let i = 0; i < 3; i++) { 
-                    const balance = await reserveToken.balanceOf(userAddress);
-                    const amount = getRandomAmount(1n, balance - 1n);
+              for (const user of selectedUsers) {
+                const userAddress = await user.getAddress();
+                const balance = await reserveToken.balanceOf(userAddress);
+                const amount = getRandomAmount(1n, balance - 1n);
+                for (let i = 0; i < 3; i++) {               
+                  it(`${userAddress} deposits ${amount} with entry fee ${entryFee}`, async function () {
                     const previousBTBalance = await bondingToken.balanceOf(userAddress);
-
                     await reserveToken.connect(user).approve(bondingTokenAddress, amount);
-                    if(!await getExpectedAssets(bondingToken,amount,entryFee)){
-                      console.log(amount);
-                      continue;
-                    }
-                    const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
 
+                    const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
+                    
                     await expect(bondingToken.connect(user).deposit(amount, userAddress))
                       .to.emit(bondingToken, 'Deposit')
                       .withArgs(userAddress, userAddress, amount, expectedShares);
@@ -144,7 +139,6 @@ describe("BondingToken Tests", function () {
                     const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
                     allData.tokenPrices.push(tokenPrice.toString());
                   }
-                }
 
                 for (const user of selectedUsers) {
                   const userAddress = await user.getAddress();

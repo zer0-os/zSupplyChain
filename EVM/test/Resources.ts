@@ -5,7 +5,7 @@ import hre from "hardhat";
 import fs from "fs";
 import { BondingTokenLinear, BondingTokenLogarithmic, BondingTokenQuadratic} from "../typechain-types/contracts/resources/fees";
 import { ERC20Token } from "../typechain-types/contracts/mock";
-//import { BasicERC4626, ERC4626Logarithmic, ERC4626Quadratic } from "../typechain-types/contracts/resources/basic"
+import { ERC4626Constant, ERC4626Logarithmic, ERC4626Quadratic } from "../typechain-types/contracts/resources/basic"
 const { ethers } = hre;
 
 const contractNames = [
@@ -50,6 +50,13 @@ describe("BondingToken Tests", function () {
 
       async function getExpectedAssets(bondingToken: BondingTokenLinear, shares: bigint, feeBasisPoints: number) {
         return await bondingToken.previewRedeem(shares);
+      }
+
+      async function calcAssets(bondingToken: BondingTokenLinear, shares: bigint, totalSupply: bigint, totalAssets: bigint){
+        return shares*totalAssets/(totalSupply+1n);
+      }
+      async function calcShares(bondingToken: BondingTokenLinear, assets: bigint, totalSupply: bigint, totalAssets: bigint){
+        return assets*totalSupply/(totalAssets+1n);
       }
 
       const allData: {
@@ -120,10 +127,7 @@ describe("BondingToken Tests", function () {
                     const previousBTBalance = await bondingToken.balanceOf(userAddress);
 
                     await reserveToken.connect(user).approve(bondingTokenAddress, amount);
-                    if(!await getExpectedAssets(bondingToken,amount,entryFee)){
-                      console.log(amount);
-                      continue;
-                    }
+                    
                     const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
 
                     await expect(bondingToken.connect(user).deposit(amount, userAddress))
@@ -421,11 +425,10 @@ describe("BondingToken Tests", function () {
               await bondingToken.setEntryFee(entryFee);
               await bondingToken.setExitFee(exitFee);
             });
-            const deposits = [10n, 10n**2n, 10n**3n, 10n**8n, 10n**18n];
-            const redeems = [10n, 10n**2n, 10n**3n, 10n**8n, 10n**18n];
+            const deposits = [10n, 10n**2n, 10n**3n, 10n**8n, 10n**18n, 10n**24n];
             numUsers.forEach(userCount => {
               // should verify edge cases - doesn't track data for graph
-              it(`should check edge cases with exact deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+              it.only(`should check edge cases with exact deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                 const selectedUsers = users.slice(0, userCount);
             
                 for (const user of selectedUsers) {

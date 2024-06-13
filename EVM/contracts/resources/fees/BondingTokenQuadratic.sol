@@ -33,7 +33,7 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
-        return assets * super._convertToShares(assets, rounding);
+        return super._convertToShares(assets*assets, rounding);
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {

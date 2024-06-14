@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract BondingTokenQuadratic is Ownable, ERC4626 {    
     uint internal constant BASIS = 1e5;
+    uint internal constant MAX_DEP_DIV = 1e16;
 
     using Math for uint;
 
@@ -22,18 +23,30 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
         exitFee = exitFeeBasisPoints;
     }
 
+    /** @dev See {IERC4626-previewDeposit}. */
     function previewDeposit(uint assets) public view override returns(uint256){
         uint shares = super.previewDeposit(assets);
         return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
+    /** @dev See {IERC4626-previewRedeem}. */
     function previewRedeem(uint shares) public view override returns(uint256){
         uint assets = super.previewRedeem(shares); 
         return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
 
+    /** @dev See {IERC4626-maxDeposit}. */
+    function maxDeposit(address) public view virtual override returns (uint256) {
+        return 1e18;//Math.sqrt(type(uint256).max);
+    }
+
+    /** @dev See {IERC4626-maxMint}. */
+    function maxMint(address) public view virtual override returns (uint256) {
+        return 1e18;
+    }
+
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
-        return super._convertToShares(assets*assets, rounding);
+        return super._convertToShares(assets**2, rounding);
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {

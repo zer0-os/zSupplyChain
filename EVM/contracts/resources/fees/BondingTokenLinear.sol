@@ -26,9 +26,19 @@ contract BondingTokenLinear is Ownable, ERC4626{
         return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
+    function previewMint(uint shares) public view override returns(uint256){
+        uint minted = super.previewMint(shares); 
+        return minted - minted.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+    }
+
     function previewRedeem(uint shares) public view override returns(uint256){
         uint assets = super.previewRedeem(shares); 
         return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+    }
+
+    function previewWithdraw(uint assets) public view override returns(uint256){
+        uint shares = super.previewWithdraw(assets);
+        return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner{

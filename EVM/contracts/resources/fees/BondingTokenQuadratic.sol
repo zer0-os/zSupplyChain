@@ -35,6 +35,20 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
         return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
 
+
+    /** @dev See {IERC4626-previewMint}. */
+    function previewMint(uint shares) public view override returns(uint256){
+        uint minted = super.previewMint(shares); 
+        return minted - minted.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+    }
+
+
+    /** @dev See {IERC4626-previewWithdraw}. */
+    function previewWithdraw(uint assets) public view override returns(uint256){
+        uint shares = super.previewWithdraw(assets);
+        return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
+    }
+
     /** @dev See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
         return Math.sqrt(type(uint256).max)/totalSupply();

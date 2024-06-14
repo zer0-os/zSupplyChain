@@ -37,12 +37,12 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
 
     /** @dev See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
-        return 1e18;//Math.sqrt(type(uint256).max);
+        return Math.sqrt(type(uint256).max)/totalSupply();
     }
 
     /** @dev See {IERC4626-maxMint}. */
     function maxMint(address) public view virtual override returns (uint256) {
-        return 1e18;
+        return Math.sqrt(type(uint256).max)/totalSupply();
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {

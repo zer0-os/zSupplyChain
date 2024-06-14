@@ -16,12 +16,12 @@ contract ERC4626Quadratic is ERC4626 {
 
     /** @dev See {IERC4626-maxDeposit}. */
     function maxDeposit(address) public view virtual override returns (uint256) {
-        return Math.sqrt(type(uint256).max)/DIV;
+        return 10**18;
     }
 
     /** @dev See {IERC4626-maxMint}. */
     function maxMint(address) public view virtual override returns (uint256) {
-        return Math.sqrt(type(uint256).max)/DIV;
+        return 10**18;
     }
 
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {

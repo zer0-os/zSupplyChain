@@ -3,9 +3,9 @@ import { expect } from "chai";
 import {Signer} from 'ethers';
 import hre from "hardhat";
 import fs from "fs";
-import { BondingTokenLinear, BondingTokenLogarithmic, BondingTokenQuadratic} from "../typechain-types/contracts/resources/fees";
+import { BondingTokenLinear, BondingTokenQuadratic} from "../typechain-types/contracts/resources/fees";
 import { ERC20Token } from "../typechain-types/contracts/mock";
-import { ERC4626Constant, ERC4626Logarithmic, ERC4626Quadratic } from "../typechain-types/contracts/resources/basic"
+import { ERC4626Linear, ERC4626Logarithmic, ERC4626Quadratic } from "../typechain-types/contracts/resources/basic"
 const { ethers } = hre;
 
 const contractNames = [
@@ -27,8 +27,8 @@ describe("BondingToken Tests", function () {
         const reserveToken = await reserveTokenFactory.deploy("Wilder World", "WILD");
         const reserveTokenAddress = await reserveToken.getAddress();
 
-        const bondingTokenFactory = await hre.ethers.getContractFactory(contract.name);
-        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0);
+        const bondingTokenFactory = await hre.ethers.getContractFactory("BondingTokenLinear");
+        const bondingToken = await bondingTokenFactory.deploy("GOLD", "GOLD", reserveTokenAddress, 0, 0);
         const bondingTokenAddress = await bondingToken.getAddress();
         
         return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address};
@@ -44,19 +44,12 @@ describe("BondingToken Tests", function () {
       const exitFees = [0, 100, 1000, 10000]; // 0%, .1%, 1%, 10%
       const numUsers = [1, 2, 3, 4];
 
-      async function getExpectedShares(bondingToken: BondingTokenLinear, assets: bigint, feeBasisPoints: number) {
+      async function getExpectedShares(bondingToken: BondingTokenLinear, assets: bigint) {
         return await bondingToken.previewDeposit(assets);
       }
 
-      async function getExpectedAssets(bondingToken: BondingTokenLinear, shares: bigint, feeBasisPoints: number) {
+      async function getExpectedAssets(bondingToken: BondingTokenLinear, shares: bigint) {
         return await bondingToken.previewRedeem(shares);
-      }
-
-      async function calcAssets(bondingToken: BondingTokenLinear, shares: bigint, totalSupply: bigint, totalAssets: bigint){
-        return shares*totalAssets/(totalSupply+1n);
-      }
-      async function calcShares(bondingToken: BondingTokenLinear, assets: bigint, totalSupply: bigint, totalAssets: bigint){
-        return assets*totalSupply/(totalAssets+1n);
       }
 
       const allData: {
@@ -75,7 +68,6 @@ describe("BondingToken Tests", function () {
       let totalShares = 0n;
 
       describe('Simulate economy with random deposits and redeems', function () {
-        let deployer: Signer;
         let bondingToken: any;
         let bondingTokenAddress: string;
         let reserveToken: ERC20Token;
@@ -128,24 +120,30 @@ describe("BondingToken Tests", function () {
 
                     await reserveToken.connect(user).approve(bondingTokenAddress, amount);
                     
-                    const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
-                    
+                    const max = await bondingToken.maxDeposit(userAddress);
+                    let expectedShares : bigint;
+
+                    if(amount > max ){
+                      await expect(getExpectedShares(bondingToken, amount)).to.be.revertedWith("ERC4626ExceededMaxDeposit");
+                      continue;
+                    }else{
+                      expectedShares = await getExpectedShares(bondingToken, amount);
+                    }
+
                     await expect(bondingToken.connect(user).deposit(amount, userAddress))
                       .to.emit(bondingToken, 'Deposit')
                       .withArgs(userAddress, userAddress, amount, expectedShares);
 
                     const actualShares = await bondingToken.balanceOf(userAddress) - previousBTBalance;
-                    totalAssets += amount;
-                    totalShares += expectedShares;
 
                     const userIndex = users.indexOf(user);
-                    allData.users[userIndex].assets.push(totalAssets.toString());
-                    allData.users[userIndex].shares.push(actualShares.toString());
+                    const btBalance = await bondingToken.balanceOf(userAddress);
+                    allData.users[userIndex].shares.push(btBalance.toString());
 
                     expect(actualShares).to.equal(expectedShares);
 
                     // Calculate and record token price
-                    const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
+                    const tokenPrice = ((10n ** 18n)/await bondingToken.previewDeposit(10n ** 18n));
                     allData.tokenPrices.push(tokenPrice.toString());
                   }
                 }
@@ -153,10 +151,10 @@ describe("BondingToken Tests", function () {
                 for (const user of selectedUsers) {
                   const userAddress = await user.getAddress();
 
-                  for (let i = 0; i < 3; i++) { // Assuming you want 3 random redeems per user
+                  for (let i = 0; i < 3; i++) {
                     const balance = await bondingToken.balanceOf(userAddress);
                     const sharesToRedeem = getRandomAmount(1n, balance - 1n);
-                    const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
+                    const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem);
                     const previousRTBalance = await reserveToken.balanceOf(user);
                     
                     await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
@@ -164,23 +162,22 @@ describe("BondingToken Tests", function () {
                       .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
 
                     const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
-                    totalAssets -= expectedAssets;
-                    totalShares -= sharesToRedeem;
 
                     const userIndex = users.indexOf(user);
-                    allData.users[userIndex].assets.push(totalAssets.toString());
-                    allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
 
+                    const rtBalance = await reserveToken.balanceOf(userAddress);
+                    allData.users[userIndex].assets.push(rtBalance.toString());
+                    
                     expect(actualAssets).to.equal(expectedAssets);
 
-                    // Calculate and record token price
-                    const tokenPrice = ((10n ** 18n) - await bondingToken.previewDeposit(10n ** 18n));
-                    allData.tokenPrices.push(tokenPrice.toString());
                   }
                 }
 
-                allData.totalSupply.push(totalShares.toString());
-                allData.totalAssets.push(totalAssets.toString());
+                // Calculate and record token data
+                const tokenPrice = (10n ** 18n)/await bondingToken.previewDeposit(10n ** 18n);
+                allData.tokenPrices.push(tokenPrice.toString());
+                allData.totalSupply.push((await bondingToken.totalSupply()).toString());
+                allData.totalAssets.push((await bondingToken.totalAssets()).toString());
               });
             });
 
@@ -364,11 +361,11 @@ describe("BondingToken Tests", function () {
       const exitFees = [0, 100]; // 0%, 1%
       const numUsers = [1, 2, 3, 4];
 
-      async function getExpectedShares(bondingToken: BondingTokenLinear, assets: bigint, feeBasisPoints: number) {
+      async function getExpectedShares(bondingToken: BondingTokenLinear, assets: bigint) {
         return await bondingToken.previewDeposit(assets);
       }
 
-      async function getExpectedAssets(bondingToken: BondingTokenLinear, shares: bigint, feeBasisPoints: number) {
+      async function getExpectedAssets(bondingToken: BondingTokenLinear, shares: bigint) {
         return await bondingToken.previewRedeem(shares);
       }
 
@@ -425,7 +422,7 @@ describe("BondingToken Tests", function () {
               await bondingToken.setEntryFee(entryFee);
               await bondingToken.setExitFee(exitFee);
             });
-            const deposits = [10n, 10n**2n, 10n**3n, 10n**8n, 10n**18n, 10n**22n];
+            const deposits = [10n, 10n**2n, 10n**3n, 10n**8n, 10n**18n, 10n**22n, 10n**32n];
             numUsers.forEach(userCount => {
               // should verify edge cases - doesn't track data for graph
               it(`should check edge cases with exact deposits and redeems for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
@@ -436,32 +433,37 @@ describe("BondingToken Tests", function () {
                   
                   for(const deposit of deposits){
                       const amount = deposit;
-                      // const balance = await reserveToken.connect(deployer).mint(userAddress, amount);
                       const previousBTBalance = await bondingToken.balanceOf(userAddress);
             
                       await reserveToken.mint(userAddress, amount);
                       await reserveToken.connect(user).approve(bondingTokenAddress, amount);
-            
-                      const expectedShares = await getExpectedShares(bondingToken, amount, entryFee);
-            
+
+                      const max = await bondingToken.maxDeposit(userAddress);
+                      let expectedShares : bigint;
+
+                      if(deposit > max ){
+                        await expect(bondingToken.connect(user).deposit(amount, userAddress)).to.be.revertedWithCustomError(bondingToken, "ERC4626ExceededMaxDeposit");
+                        continue;
+                      }else{
+                        expectedShares = await getExpectedShares(bondingToken, amount);
+                      }
+
                       await expect(bondingToken.connect(user).deposit(amount, userAddress))
                         .to.emit(bondingToken, 'Deposit')
                         .withArgs(userAddress, userAddress, amount, expectedShares);
-            
-                      const actualShares = await bondingToken.balanceOf(userAddress) - previousBTBalance;
-                      totalAssets += amount;
-                      totalShares += expectedShares;
-            
-                      const userIndex = users.indexOf(user);
-                      allData.users[userIndex].assets.push(totalAssets.toString());
-                      allData.users[userIndex].shares.push(actualShares.toString());
-            
+
+                      const btBalance = await bondingToken.balanceOf(userAddress);
+                      const actualShares = btBalance - previousBTBalance;
+
                       expect(actualShares).to.equal(expectedShares);
+                      const userIndex = users.indexOf(user);
+
+                      allData.users[userIndex].shares.push(btBalance.toString());
                   };
                   
                   const balance = await bondingToken.balanceOf(userAddress);
                   const sharesToRedeem = balance; // Adjust the logic as needed
-                  const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem, exitFee);
+                  const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem);
                   const previousRTBalance = await reserveToken.balanceOf(userAddress);
         
                   await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
@@ -469,22 +471,24 @@ describe("BondingToken Tests", function () {
                     .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
         
                   const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
-                  totalAssets -= expectedAssets;
-                  totalShares -= sharesToRedeem;
         
                   const userIndex = users.indexOf(user);
-                  allData.users[userIndex].assets.push(totalAssets.toString());
-                  allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
+                  //allData.users[userIndex].assets.push(totalAssets.toString());
+                  //allData.users[userIndex].shares.push((await bondingToken.balanceOf(userAddress)).toString());
         
                   expect(actualAssets).to.equal(expectedAssets);
 
+                  //record rt data
+                  const rtBalance = await reserveToken.balanceOf(userAddress);
+                  allData.users[userIndex].assets.push(rtBalance.toString());
+
                   // Calculate and record token price
-                  const tokenPrice = (await bondingToken.previewDeposit(10n ** 18n)) / 10n ** 18n;
-                  allData.tokenPrices.push(tokenPrice.toString());
+                  //const tokenPrice = (await bondingToken.previewDeposit(10n ** 18n)) / 10n ** 18n;
+                  //allData.tokenPrices.push(tokenPrice.toString());
                 }
             
-                allData.totalSupply.push(totalShares.toString());
-                allData.totalAssets.push(totalAssets.toString());
+                //allData.totalSupply.push((await bondingToken.totalSupply()).toString());
+                //allData.totalAssets.push((await bondingToken.totalAssets().toString()));
               });
             });            
           });

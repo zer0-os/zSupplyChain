@@ -291,11 +291,11 @@ describe("BondingToken Tests", function () {
               await bondingToken.setExitFee(exitFee);
             });
 
-            const deposits = [10n, 10n ** 2n, 10n ** 3n, 10n ** 8n, 10n ** 18n, 10n ** 22n, 10n ** 32n, 10n ** 38n, 10n ** 39n, 10n**40n]; //should fail on 39 or 40
             numUsers.forEach(userCount => {
-              deposits.forEach(deposit => {
-                it(`should check edge cases with deposit ${deposit} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+              for (let power = 1n; power <= 40n; power++) {
+                it(`should check edge cases with deposit 10^${power} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                   const selectedUsers = users.slice(0, userCount);
+                  const deposit = 10n ** power;
 
                   for (const user of selectedUsers) {
                     const userAddress = await user.getAddress();
@@ -309,7 +309,7 @@ describe("BondingToken Tests", function () {
 
                     if (deposit > max) {
                       await expect(bondingToken.connect(user).deposit(deposit, userAddress)).to.be.revertedWithCustomError(bondingToken, "ERC4626ExceededMaxDeposit");
-                      continue;
+                      break;
                     } else {
                       expectedShares = await getExpectedShares(bondingToken, deposit);
                     }
@@ -328,19 +328,25 @@ describe("BondingToken Tests", function () {
                   }
                 });
 
-                it(`should check edge cases with redeem ${deposit} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+                it(`should check edge cases with redeem 10^${power} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                   const selectedUsers = users.slice(0, userCount);
+                  const redeem = 10n ** power;
 
                   for (const user of selectedUsers) {
                     const userAddress = await user.getAddress();
                     const balance = await bondingToken.balanceOf(userAddress);
-                    const sharesToRedeem = balance < deposit ? balance : deposit;
+                    const sharesToRedeem = balance < redeem ? balance : redeem;
                     const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem);
                     const previousRTBalance = await reserveToken.balanceOf(userAddress);
 
-                    await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
-                      .to.emit(bondingToken, 'Withdraw')
-                      .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
+                    if (sharesToRedeem > balance) {
+                      await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress)).to.be.revertedWithCustomError(bondingToken, "ERC4626ExceededMaxRedeem");
+                      break;
+                    } else {
+                      await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
+                        .to.emit(bondingToken, 'Withdraw')
+                        .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
+                    }
 
                     const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
                     const userIndex = users.indexOf(user);
@@ -356,14 +362,14 @@ describe("BondingToken Tests", function () {
                     // Calculate and record token data
                     const totalSupply = await bondingToken.totalSupply();
                     const totalAssets = await bondingToken.totalAssets();
-                    const checkAmt = totalAssets + 1n;
-                    const tokenPrice = checkAmt / await bondingToken.convertToShares(checkAmt);
+                    const checkAmt = 10n**18n;
+                    const tokenPrice = await bondingToken.convertToAssets(checkAmt) / (await bondingToken.convertToShares(checkAmt) + 1n);
                     allData.tokenPrices.push(tokenPrice.toString());
                     allData.totalSupply.push(totalSupply.toString());
                     allData.totalAssets.push(totalAssets.toString());
                   }
                 });
-              });
+              }
             });
           });
         });

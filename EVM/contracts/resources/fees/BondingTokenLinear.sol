@@ -42,10 +42,12 @@ contract BondingTokenLinear is Ownable, ERC4626{
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner{
+        require(BASIS >= _entryFeeBasisPoints*2, "Fee exceeds 50 percent");
         entryFee = _entryFeeBasisPoints;
     }
 
     function setExitFee(uint256 _exitFeeBasisPoints) external onlyOwner{
+        require(BASIS >= _exitFeeBasisPoints*2, "Fee exceeds 50 percent");
         exitFee = _exitFeeBasisPoints;
     }
 }

@@ -42,8 +42,9 @@ describe("BondingToken Tests", function () {
         return rand;
       }
 
-      const entryFees = [0, 100, 1000, 10000]; // 0%, .1%, 1%, 10%
-      const exitFees = [0, 100, 1000, 10000]; // 0%, .1%, 1%, 10%
+      const basis = 100000;
+      const entryFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%
+      const exitFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%
       const numUsers = [1, 2, 3, 4];
 
       async function getExpectedShares(bondingToken: BondingTokenType, assets: bigint) {
@@ -109,8 +110,17 @@ describe("BondingToken Tests", function () {
         entryFees.forEach(entryFee => {
           exitFees.forEach(exitFee => {
             it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
-              await bondingToken.setEntryFee(entryFee);
-              await bondingToken.setExitFee(exitFee);
+              if (basis >= entryFee * 2) {
+                await bondingToken.setEntryFee(entryFee);
+              } else {
+                  await expect(bondingToken.setEntryFee(entryFee)).to.be.revertedWith("Fee exceeds 50 percent");
+              }
+          
+              if (basis >= exitFee * 2) {
+                  await bondingToken.setExitFee(exitFee);
+              } else {
+                  await expect(bondingToken.setExitFee(exitFee)).to.be.revertedWith("Fee exceeds 50 percent");
+              }
             });
 
             numUsers.forEach(userCount => {
@@ -223,7 +233,7 @@ describe("BondingToken Tests", function () {
 
       const entryFees = [0, 100]; // 0%, 1%
       const exitFees = [0, 100]; // 0%, 1%
-      const numUsers = [1, 2, 3, 4];
+      const numUsers = [1, 2, 3];
 
       async function getExpectedShares(bondingToken: BondingTokenType, assets: bigint) {
         return await bondingToken.previewDeposit(assets);

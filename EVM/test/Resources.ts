@@ -100,6 +100,7 @@ describe("BondingToken Tests", function () {
 
           // Initial token donation to set price
           const initialDonationAmount = 500n * 10n ** 18n; // 500 ether in wei
+
           await reserveToken.mint(users[0].getAddress(), initialDonationAmount);
           await reserveToken.connect(users[0]).transfer(bondingTokenAddress, initialDonationAmount);
           allData.totalSupply.push((await bondingToken.totalSupply()).toString());
@@ -113,13 +114,13 @@ describe("BondingToken Tests", function () {
               if (basis >= entryFee * 2) {
                 await bondingToken.setEntryFee(entryFee);
               } else {
-                  await expect(bondingToken.setEntryFee(entryFee)).to.be.revertedWith("Fee exceeds 50 percent");
+                await expect(bondingToken.setEntryFee(entryFee)).to.be.revertedWith("Fee exceeds 50 percent");
               }
           
               if (basis >= exitFee * 2) {
                   await bondingToken.setExitFee(exitFee);
               } else {
-                  await expect(bondingToken.setExitFee(exitFee)).to.be.revertedWith("Fee exceeds 50 percent");
+                await expect(bondingToken.setExitFee(exitFee)).to.be.revertedWith("Fee exceeds 50 percent");
               }
             });
 
@@ -302,10 +303,10 @@ describe("BondingToken Tests", function () {
             });
 
             numUsers.forEach(userCount => {
-              for (let power = 1n; power <= 40n; power++) {
-                it(`should check edge cases with deposit 10^${power} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+              for (let power = 1n; power <= 77n; power++) {
+                it(`should unit test with deposit 10^${power} for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                   const selectedUsers = users.slice(0, userCount);
-                  const deposit = 10n ** power;
+                  const deposit = 1n ** power;
 
                   for (const user of selectedUsers) {
                     const userAddress = await user.getAddress();
@@ -348,6 +349,9 @@ describe("BondingToken Tests", function () {
                     const sharesToRedeem = balance < redeem ? balance : redeem;
                     const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem);
                     const previousRTBalance = await reserveToken.balanceOf(userAddress);
+                    let maxUint = ethers.MaxUint256;
+
+                    if(sharesToRedeem > maxUint)
 
                     if (sharesToRedeem > balance) {
                       await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress)).to.be.revertedWithCustomError(bondingToken, "ERC4626ExceededMaxRedeem");

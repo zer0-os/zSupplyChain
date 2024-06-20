@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// does not work well due to integer math when performing 2^assets
 /// illustrates the need for floating point math library to perform 2**x with fractional x
+/// a different data type representation is needed, like bytes16 as in the ABDK math libs
 
 contract ERC4626Logarithmic is ERC4626 {
     constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) ERC4626(reserveToken) ERC20(name, symbol) {}

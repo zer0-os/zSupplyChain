@@ -11,8 +11,8 @@ const { ethers } = hre;
 type BondingTokenType = BondingTokenLinear | BondingTokenQuadratic;
 
 const contractNames = [
-  { name: "BondingTokenLinear", tokenName: "UNREFINED GOLD", tokenSymbol: "GOLD" },
-  { name: "BondingTokenQuadratic", tokenName: "UNREFINED COAL", tokenSymbol: "COAL" }
+  { name: "BondingTokenLinear", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" },
+  { name: "BondingTokenQuadratic", tokenName: "UNREFINED GOLD", tokenSymbol: "COAL" }
 ];
 
 describe("BondingToken Tests", function () {
@@ -20,6 +20,7 @@ describe("BondingToken Tests", function () {
     describe(`${contract.name} simulation tests`, function () {
       async function deploy() {
         const [deployer, user, user1, user2, user3] = await hre.ethers.getSigners();
+        
         const userAddress = await user.getAddress();
         const user1Address = await user1.getAddress();
         const user2Address = await user2.getAddress();
@@ -99,13 +100,13 @@ describe("BondingToken Tests", function () {
           });
 
           // Initial token donation to set price
-          const initialDonationAmount = 5n * 10n ** 18n; // 5 ether in wei
+          //const initialDonationAmount = 5n * 10n ** 18n; // 5 ether in wei
 
-          await reserveToken.mint(users[0].getAddress(), initialDonationAmount);
-          await reserveToken.connect(users[0]).transfer(bondingTokenAddress, initialDonationAmount);
-          allData.totalSupply.push((await bondingToken.totalSupply()).toString());
-          allData.totalAssets.push((await bondingToken.totalAssets()).toString());
-          allData.tokenPrices.push((await bondingToken.convertToAssets(10n ** 18n)).toString());
+          //await reserveToken.mint(users[0].getAddress(), initialDonationAmount);
+          //await reserveToken.connect(users[0]).transfer(bondingTokenAddress, initialDonationAmount);
+          //allData.totalSupply.push((await bondingToken.totalSupply()).toString());
+          //allData.totalAssets.push((await bondingToken.totalAssets()).toString());
+          //allData.tokenPrices.push((await bondingToken.convertToAssets(10n ** 18n)).toString());
         });
 
         entryFees.forEach(entryFee => {
@@ -126,81 +127,89 @@ describe("BondingToken Tests", function () {
 
             numUsers.forEach(userCount => {
               for (let i = 0; i < 3; i++) {
-                const rand = getRandomAmount(0n,100n);
-                const depositOrRedeem = rand < 50 ? true : false;
-
-                async function recordUserData(userIndex : number) {
-                  const userAddress = users[userIndex];
-
-                  const btBalance = await bondingToken.balanceOf(userAddress);
-                  allData.users[userIndex].shares.push(btBalance.toString());
-
-                  const rtBalance = await reserveToken.balanceOf(userAddress);
-                  allData.users[userIndex].assets.push(rtBalance.toString());
-                }
-
-                async function recordTokenData() {
-                  // Calculate and record token data
-                  const totalSupply = await bondingToken.totalSupply();
-                  const totalAssets = await bondingToken.totalAssets();
-                  const checkAmt = 10n**18n;
-                  const tokenPrice = checkAmt - await bondingToken.convertToShares(checkAmt) + 1n;
-                  allData.tokenPrices.push(tokenPrice.toString());
-                  allData.totalSupply.push(totalSupply.toString());
-                  allData.totalAssets.push(totalAssets.toString());
-                }
-
-                if(depositOrRedeem){
+                const rand = getRandomAmount(0n, 100n);
+                const depositOrRedeem = rand < 50;
+            
+                if (depositOrRedeem) {
                   it(`should deposit for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                     const selectedUsers = users.slice(0, userCount);
-
+            
                     for (const user of selectedUsers) {
+
                       const userAddress = await user.getAddress();
                       const balance = await reserveToken.balanceOf(userAddress);
                       const previousBTBalance = await bondingToken.balanceOf(userAddress);
+                      //console.log("before: ", userAddress, " bt: ", previousBTBalance, " rt: ", balance);
 
                       const max = await bondingToken.maxDeposit(userAddress);
-                      const amount = balance < max ? getRandomAmount(1n, balance/10n - 1n) : getRandomAmount(1n, max - 1n);
-                      //console.log("user ", userAddress, "bal ", balance, "max ", max, "amt ", amount);
-
+                      const amount = balance < max ? getRandomAmount(1n, balance - 1n) : getRandomAmount(1n, max - 1n);
+                      //console.log("deposit: ", amount);
                       await reserveToken.connect(user).approve(bondingTokenAddress, amount);
                       const expectedShares = await getExpectedShares(bondingToken, amount);
-
+            
                       await expect(bondingToken.connect(user).deposit(amount, userAddress))
                         .to.emit(bondingToken, 'Deposit')
                         .withArgs(userAddress, userAddress, amount, expectedShares);
-
+            
                       const actualShares = await bondingToken.balanceOf(userAddress) - previousBTBalance;
                       expect(actualShares).to.equal(expectedShares);
-
+            
                       const userIndex = users.indexOf(user);
-                      await recordUserData(userIndex);
-                      await recordTokenData();
+                      const btBalance = await bondingToken.balanceOf(userAddress);
+                      allData.users[userIndex].shares.push(btBalance.toString());
+            
+                      const rtBalance = await reserveToken.balanceOf(userAddress);
+                      allData.users[userIndex].assets.push(rtBalance.toString());
+
+                      //console.log(userAddress, " bt: ", btBalance, " rt: ", rtBalance);
                     }
+            
+                    await recordTokenData();
                   });
                 } else {
                   it(`should redeem for ${userCount} users with entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
                     const selectedUsers = users.slice(0, userCount);
-
+            
                     for (const user of selectedUsers) {
                       const userAddress = await user.getAddress();
                       const balance = await bondingToken.balanceOf(userAddress);
-                      const sharesToRedeem = getRandomAmount(1n, balance/100n - 1n);
+                      const sharesToRedeem = getRandomAmount(1n, balance - 1n);
                       const expectedAssets = await getExpectedAssets(bondingToken, sharesToRedeem);
                       const previousRTBalance = await reserveToken.balanceOf(userAddress);
-
+            
                       await expect(bondingToken.connect(user).redeem(sharesToRedeem, userAddress, userAddress))
                         .to.emit(bondingToken, 'Withdraw')
                         .withArgs(userAddress, userAddress, userAddress, expectedAssets, sharesToRedeem);
-
+            
                       const actualAssets = await reserveToken.balanceOf(userAddress) - previousRTBalance;
                       expect(actualAssets).to.equal(expectedAssets);
-                      
+            
                       const userIndex = users.indexOf(user);
                       await recordUserData(userIndex);
                       await recordTokenData();
                     }
                   });
+                }
+            
+                async function recordUserData(userIndex : number) {
+                  const userAddress = users[userIndex];
+            
+                  const btBalance = await bondingToken.balanceOf(userAddress);
+                  allData.users[userIndex].shares.push(btBalance.toString());
+            
+                  const rtBalance = await reserveToken.balanceOf(userAddress);
+                  allData.users[userIndex].assets.push(rtBalance.toString());
+                }
+            
+                async function recordTokenData() {
+                  // Calculate and record token data
+                  const totalSupply = await bondingToken.totalSupply();
+                  const totalAssets = await bondingToken.totalAssets();
+                  const checkAmt = 10n ** 18n;
+                  const tokenPrice = checkAmt / (await bondingToken.convertToShares(checkAmt) + 1n);
+                  allData.tokenPrices.push(tokenPrice.toString());
+                  allData.totalSupply.push(totalSupply.toString());
+                  allData.totalAssets.push(totalAssets.toString());
                 }
               }
             });
@@ -337,6 +346,9 @@ describe("BondingToken Tests", function () {
                     const userIndex = users.indexOf(user);
 
                     allData.users[userIndex].shares.push(btBalance.toString());
+
+                    const rtBalance = await reserveToken.balanceOf(userAddress);
+                    allData.users[userIndex].assets.push(rtBalance.toString());
                   }
                 });
 
@@ -373,16 +385,16 @@ describe("BondingToken Tests", function () {
                     allData.users[userIndex].assets.push(rtBalance.toString());
 
                     expect(actualAssets).to.equal(expectedAssets);
-
-                    // Calculate and record token data
-                    const totalSupply = await bondingToken.totalSupply();
-                    const totalAssets = await bondingToken.totalAssets();
-                    const checkAmt = 10n**18n;
-                    const tokenPrice = await bondingToken.convertToAssets(checkAmt) / (await bondingToken.convertToShares(checkAmt) + 1n);
-                    allData.tokenPrices.push(tokenPrice.toString());
-                    allData.totalSupply.push(totalSupply.toString());
-                    allData.totalAssets.push(totalAssets.toString());
                   }
+
+                  // Calculate and record token data
+                  const totalSupply = await bondingToken.totalSupply();
+                  const totalAssets = await bondingToken.totalAssets();
+                  const checkAmt = 10n**18n;
+                  const tokenPrice = checkAmt / (await bondingToken.convertToShares(checkAmt) + 1n);
+                  allData.tokenPrices.push(tokenPrice.toString());
+                  allData.totalSupply.push(totalSupply.toString());
+                  allData.totalAssets.push(totalAssets.toString());
                 });
               }
             });
@@ -407,138 +419,98 @@ describe("BondingToken Tests", function () {
         <body>
           ${allData.users.map((userData: any, index: number) => `
             <h2>User ${index + 1} Assets Over Time</h2>
-            <canvas id="user${index + 1}AssetsChart"></canvas>
+            <canvas id="user${index + 1}AssetsChartLinear"></canvas>
+            <canvas id="user${index + 1}AssetsChartLog"></canvas>
             <h2>User ${index + 1} Shares Over Time</h2>
-            <canvas id="user${index + 1}SharesChart"></canvas>
+            <canvas id="user${index + 1}SharesChartLinear"></canvas>
+            <canvas id="user${index + 1}SharesChartLog"></canvas>
           `).join('')}
           <h2>Total Supply Over Time</h2>
-          <canvas id="totalSupplyChart"></canvas>
+          <canvas id="totalSupplyChartLinear"></canvas>
+          <canvas id="totalSupplyChartLog"></canvas>
           <h2>Total Assets Over Time</h2>
-          <canvas id="totalAssetsChart"></canvas>
+          <canvas id="totalAssetsChartLinear"></canvas>
+          <canvas id="totalAssetsChartLog"></canvas>
           <h2>Token Price Over Time</h2>
-          <canvas id="tokenPriceChart"></canvas>
+          <canvas id="tokenPriceChartLinear"></canvas>
+          <canvas id="tokenPriceChartLog"></canvas>
           <script>
-            ${allData.users.map((userData: any, index: number) => `
-              const user${index + 1}AssetsCtx = document.getElementById('user${index + 1}AssetsChart').getContext('2d');
-              const user${index + 1}AssetsChart = new Chart(user${index + 1}AssetsCtx, {
+            function createChart(ctx, data, label, yScaleType) {
+              new Chart(ctx, {
                 type: 'line',
                 data: {
-                  labels: ${JSON.stringify(Array.from({ length: userData.assets.length }, (_, i) => i + 1))},
-                  datasets: [
-                    {
-                      label: 'User ${index + 1} Assets',
-                      data: ${JSON.stringify(userData.assets)},
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      borderWidth: 1,
-                      fill: false
-                    }
-                  ]
-                },
-                options: {
-                  scales: {
-                    x: { beginAtZero: true },
-                    y: { beginAtZero: true }
-                  }
-                }
-              });
-
-              const user${index + 1}SharesCtx = document.getElementById('user${index + 1}SharesChart').getContext('2d');
-              const user${index + 1}SharesChart = new Chart(user${index + 1}SharesCtx, {
-                type: 'line',
-                data: {
-                  labels: ${JSON.stringify(Array.from({ length: userData.shares.length }, (_, i) => i + 1))},
-                  datasets: [
-                    {
-                      label: 'User ${index + 1} Shares',
-                      data: ${JSON.stringify(userData.shares)},
-                      borderColor: 'rgba(153, 102, 255, 1)',
-                      borderWidth: 1,
-                      fill: false
-                    }
-                  ]
-                },
-                options: {
-                  scales: {
-                    x: { beginAtZero: true },
-                    y: { beginAtZero: true }
-                  }
-                }
-              });
-            `).join('')}
-
-            const totalSupplyCtx = document.getElementById('totalSupplyChart').getContext('2d');
-            const totalSupplyChart = new Chart(totalSupplyCtx, {
-              type: 'line',
-              data: {
-                labels: ${JSON.stringify(Array.from({ length: allData.totalSupply.length }, (_, i) => i + 1))},
-                datasets: [
-                  {
-                    label: 'Total Supply',
-                    data: ${JSON.stringify(allData.totalSupply)},
+                  labels: data.labels,
+                  datasets: [{
+                    label: label,
+                    data: data.values,
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1,
                     fill: false
+                  }]
+                },
+                options: {
+                  scales: {
+                    x: { beginAtZero: true },
+                    y: {
+                      type: yScaleType,
+                      beginAtZero: true,
+                      ticks: {
+                        callback: function (value) {
+                          return Number(value.toString()); // Pass tick values as a string to Number function
+                        }
+                      }
+                    }
                   }
-                ]
-              },
-              options: {
-                scales: {
-                  x: { beginAtZero: true },
-                  y: { beginAtZero: true }
                 }
-              }
-            });
-
-            const totalAssetsCtx = document.getElementById('totalAssetsChart').getContext('2d');
-            const totalAssetsChart = new Chart(totalAssetsCtx, {
-              type: 'line',
-              data: {
-                labels: ${JSON.stringify(Array.from({ length: allData.totalAssets.length }, (_, i) => i + 1))},
-                datasets: [
-                  {
-                    label: 'Total Assets',
-                    data: ${JSON.stringify(allData.totalAssets)},
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1,
-                    fill: false
-                  }
-                ]
-              },
-              options: {
-                scales: {
-                  x: { beginAtZero: true },
-                  y: { beginAtZero: true }
-                }
-              }
-            });
-
-            const tokenPriceCtx = document.getElementById('tokenPriceChart').getContext('2d');
-            const tokenPriceChart = new Chart(tokenPriceCtx, {
-              type: 'line',
-              data: {
-                labels: ${JSON.stringify(Array.from({ length: allData.tokenPrices.length }, (_, i) => i + 1))},
-                datasets: [
-                  {
-                    label: 'Token Price',
-                    data: ${JSON.stringify(allData.tokenPrices)},
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1,
-                    fill: false
-                  }
-                ]
-              },
-              options: {
-                scales: {
-                  x: { beginAtZero: true },
-                  y: { beginAtZero: true }
-                }
-              }
-            });
+              });
+            }
+    
+            ${allData.users.map((userData: any, index: number) => `
+              const user${index + 1}AssetsData = {
+                labels: ${JSON.stringify(Array.from({ length: userData.assets.length }, (_, i) => i + 1))},
+                values: ${JSON.stringify(userData.assets)}
+              };
+    
+              const user${index + 1}SharesData = {
+                labels: ${JSON.stringify(Array.from({ length: userData.shares.length }, (_, i) => i + 1))},
+                values: ${JSON.stringify(userData.shares)}
+              };
+    
+              createChart(document.getElementById('user${index + 1}AssetsChartLinear').getContext('2d'), user${index + 1}AssetsData, 'User ${index + 1} Assets (Linear)', 'linear');
+              createChart(document.getElementById('user${index + 1}AssetsChartLog').getContext('2d'), user${index + 1}AssetsData, 'User ${index + 1} Assets (Log)', 'logarithmic');
+    
+              createChart(document.getElementById('user${index + 1}SharesChartLinear').getContext('2d'), user${index + 1}SharesData, 'User ${index + 1} Shares (Linear)', 'linear');
+              createChart(document.getElementById('user${index + 1}SharesChartLog').getContext('2d'), user${index + 1}SharesData, 'User ${index + 1} Shares (Log)', 'logarithmic');
+            `).join('')}
+    
+            const totalSupplyData = {
+              labels: ${JSON.stringify(Array.from({ length: allData.totalSupply.length }, (_, i) => i + 1))},
+              values: ${JSON.stringify(allData.totalSupply)}
+            };
+    
+            const totalAssetsData = {
+              labels: ${JSON.stringify(Array.from({ length: allData.totalAssets.length }, (_, i) => i + 1))},
+              values: ${JSON.stringify(allData.totalAssets)}
+            };
+    
+            const tokenPriceData = {
+              labels: ${JSON.stringify(Array.from({ length: allData.tokenPrices.length }, (_, i) => i + 1))},
+              values: ${JSON.stringify(allData.tokenPrices)}
+            };
+    
+            createChart(document.getElementById('totalSupplyChartLinear').getContext('2d'), totalSupplyData, 'Total Supply (Linear)', 'linear');
+            createChart(document.getElementById('totalSupplyChartLog').getContext('2d'), totalSupplyData, 'Total Supply (Log)', 'logarithmic');
+    
+            createChart(document.getElementById('totalAssetsChartLinear').getContext('2d'), totalAssetsData, 'Total Assets (Linear)', 'linear');
+            createChart(document.getElementById('totalAssetsChartLog').getContext('2d'), totalAssetsData, 'Total Assets (Log)', 'logarithmic');
+    
+            createChart(document.getElementById('tokenPriceChartLinear').getContext('2d'), tokenPriceData, 'Token Price (Linear)', 'linear');
+            createChart(document.getElementById('tokenPriceChartLog').getContext('2d'), tokenPriceData, 'Token Price (Log)', 'logarithmic');
           </script>
         </body>
         </html>
       `;
-
+    
       fs.writeFileSync(`test_results_${contractName}.html`, html);
     }
   }

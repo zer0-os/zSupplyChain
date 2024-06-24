@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 contract BondingTokenLinear is Ownable, ERC4626{
     using Math for uint;
 
-    uint internal constant BASIS = 1e5;
+    uint internal constant BASIS = 1e6;
 
     uint entryFee; /// entry fee in basis points. 0 to 100000. 1 => 0.001%. 10000 => 10% 
     uint exitFee; /// exit fee in basis points. must be > 0. 1 => 0.001%. 10000 => 10%

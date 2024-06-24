@@ -7,8 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract BondingTokenQuadratic is Ownable, ERC4626 {    
-    uint internal constant BASIS = 1e5;
-    uint internal constant MAX_DEP_DIV = 1e16;
+    uint internal constant BASIS = 1e6;
 
     using Math for uint;
 

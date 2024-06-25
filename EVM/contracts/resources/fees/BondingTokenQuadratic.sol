@@ -6,8 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+/// Quadratic term, with coefficient defined by the ratios of totalSupply to totalAssets
+/// Converts sqrt amount of RT to BT because this direction mitigates overflows.
+/// y = a*x^2 + 0x + 0 
+/// x = sqrt(y/a)
+/// y: assets, x: shares, a: totalAssets/totalSupply
+
 contract BondingTokenQuadratic is Ownable, ERC4626 {    
-    uint internal constant BASIS = 1e6;
+    uint internal constant BASIS = 1e5;
 
     using Math for uint;
 
@@ -34,13 +40,11 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
         return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
 
-
     /** @dev See {IERC4626-previewMint}. */
     function previewMint(uint shares) public view override returns(uint256){
         uint minted = super.previewMint(shares); 
         return minted - minted.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
-
 
     /** @dev See {IERC4626-previewWithdraw}. */
     function previewWithdraw(uint assets) public view override returns(uint256){
@@ -48,22 +52,12 @@ contract BondingTokenQuadratic is Ownable, ERC4626 {
         return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
-    /** @dev See {IERC4626-maxDeposit}. */
-    function maxDeposit(address) public view virtual override returns (uint256) {
-        return type(uint128).max/(totalSupply()+1);
-    }
-
-    /** @dev See {IERC4626-maxMint}. */
-    function maxMint(address) public view virtual override returns (uint256) {
-        return type(uint128).max/(totalSupply()+1);
-    }
-
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
-        return super._convertToShares(assets**2, rounding);
+        return Math.sqrt(super._convertToShares(assets, rounding));
     }
 
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {
-        return Math.sqrt(super._convertToAssets(shares, rounding));
+        return super._convertToAssets(shares**2, rounding);
     }
 
     function setEntryFee(uint256 _entryFeeBasisPoints) external onlyOwner(){

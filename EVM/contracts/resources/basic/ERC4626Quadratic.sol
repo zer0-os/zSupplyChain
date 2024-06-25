@@ -14,16 +14,6 @@ contract ERC4626Quadratic is ERC4626 {
     uint internal constant DIV = 1e10;
     constructor(string memory name, string memory symbol, IERC20 reserveToken) ERC4626(reserveToken) ERC20(name, symbol) {}
 
-    /** @dev See {IERC4626-maxDeposit}. */
-    function maxDeposit(address) public view virtual override returns (uint256) {
-        return 10**18;
-    }
-
-    /** @dev See {IERC4626-maxMint}. */
-    function maxMint(address) public view virtual override returns (uint256) {
-        return 10**18;
-    }
-
     function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256) {
         return super._convertToShares(assets**2, rounding);
     }

@@ -101,3 +101,27 @@ body {
   min-height:100%;
   color:var(--fg1);
 }
+
+.Board {
+  text-align: center;
+}
+
+.grid {
+  display: inline-block;
+  margin-top: 20px;
+}
+
+.row {
+  display: flex;
+}
+
+.tile {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.tile.active {
+  background-color: #4caf50;
+}

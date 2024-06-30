@@ -1,65 +1,57 @@
-import React from 'react'
-import { Provider, useSelector, useDispatch } from 'react-redux'
-
-import { createWeb3Modal } from '@web3modal/wagmi/react'
-import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
-import { WagmiProvider, useAccountEffect } from 'wagmi'
-import { arbitrum, mainnet } from 'wagmi/chains'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
-import store from './store'
+import React from 'react';
+import { Provider } from 'react-redux';
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
+import store from './store.js';
 import './App.css';
 import MainView from './components/MainView.js';
 import HeaderBar from './components/HeaderBar.js';
-//import OwnerView from './components/OwnerView.js';
-//import UserView from './components/UserView.js';
+import Board from './components/Board.js';
 
-// Setup queryClient
-const queryClient = new QueryClient()
-
-// Get projectId at https://cloud.walletconnect.com
-// direnv is giving me grief.
-//const projectId = process.env.walletConnectProjectId;
 const projectId = 'c553299235dcdb3c9205c101832fd376';
 
-// Create wagmiConfig
+// Define mainnet chain
+const mainnet = {
+  chainId: 1,
+  name: 'Ethereum',
+  currency: 'ETH',
+  explorerUrl: 'https://etherscan.io',
+  rpcUrl: 'https://cloudflare-eth.com'
+};
+
+// Define metadata
 const metadata = {
   name: 'Web3Modal',
   description: 'Web3Modal Example',
   url: 'https://web3modal.com', // origin must match your domain & subdomain
   icons: ['https://avatars.githubusercontent.com/u/37784886']
-}
+};
 
-const chains = [mainnet, arbitrum]// as const
-const config = defaultWagmiConfig({
-  chains, // required
-  projectId, // required
-  metadata, // required
-  enableWalletConnect: true, // Optional - true by default
-  enableInjected: true, // Optional - true by default
-  enableEIP6963: true, // Optional - true by default
-  enableCoinbase: true, // Optional - true by default
-  //...wagmiOptions // Optional - Override createConfig parameters
-})
+// Create Ethers config
+const ethersConfig = defaultConfig({
+  metadata,
+  enableEIP6963: true, // true by default
+  enableInjected: true, // true by default
+  enableCoinbase: true, // true by default
+  rpcUrl: 'https://cloudflare-eth.com', // used for the Coinbase SDK
+  defaultChainId: 1 // used for the Coinbase SDK
+});
 
+// Create a Web3Modal instance
 createWeb3Modal({
-  wagmiConfig: config,
+  ethersConfig,
+  chains: [mainnet],
   projectId,
   enableAnalytics: true // Optional - defaults to your Cloud configuration
-})
+});
 
 function App() {
-
   return (
     <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
-          <div className="App">
-            <HeaderBar />
-            <MainView />
-          </div>
-        </WagmiProvider>
-      </QueryClientProvider>
+      <div className="App">
+        <HeaderBar />
+        <MainView />
+        <Board />
+      </div>
     </Provider>
   );
 }

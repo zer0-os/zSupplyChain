@@ -5,7 +5,7 @@ function ConnectButton() {
 function HeaderBar() {
   return (
     <header className="App-header">
-      <h1 className="App-logo">zXP</h1>
+      <h1 className="App-logo">zSC</h1>
       <ConnectButton />
     </header>
   );

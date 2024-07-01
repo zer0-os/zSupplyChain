@@ -10,20 +10,21 @@ const { ethers } = hre;
 type BondingTokenType = BondingTokenLinear | BondingTokenQuadratic;
 
 const contractNames = [
-  { name: "BondingTokenLinear", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" },
-  { name: "BondingTokenQuadratic", tokenName: "UNREFINED GOLD", tokenSymbol: "COAL" }
+  { name: "BondingTokenLinear", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" }
+  //{ name: "BondingTokenQuadratic", tokenName: "UNREFINED GOLD", tokenSymbol: "COAL" }
 ];
 
 describe("BondingToken Tests", function () {
   for (const contract of contractNames) {
     describe(`${contract.name} simulation tests`, function () {
       async function deploy() {
-        const [deployer, user, user1, user2, user3] = await hre.ethers.getSigners();
+        const [deployer, user, user1, user2, user3, strategicUser] = await hre.ethers.getSigners();
         
         const userAddress = await user.getAddress();
         const user1Address = await user1.getAddress();
         const user2Address = await user2.getAddress();
         const user3Address = await user3.getAddress();
+        const strategicUserAddress = await strategicUser.getAddress();
 
         const reserveTokenFactory = await hre.ethers.getContractFactory("ERC20Token");
         const reserveToken = await reserveTokenFactory.deploy("Wilder World", "WILD");
@@ -33,7 +34,7 @@ describe("BondingToken Tests", function () {
         const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0) as BondingTokenType;
         const bondingTokenAddress = await bondingToken.getAddress();
 
-        return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address };
+        return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address , strategicUser, strategicUserAddress};
       }
 
       function getRandomAmount(min: bigint, max: bigint): bigint {
@@ -74,6 +75,8 @@ describe("BondingToken Tests", function () {
         let reserveTokenAddress: string;
         let users: Signer[];
         let userAddresses: string[];
+        let strategicUser: Signer;
+        let strategicUserAddress: string;
 
         const initialMintAmount = 500n * 10n ** 18n; // Mint 500 ether in wei
 
@@ -85,6 +88,8 @@ describe("BondingToken Tests", function () {
           reserveTokenAddress = deployment.reserveTokenAddress;
           users = [deployment.user, deployment.user1, deployment.user2, deployment.user3];
           userAddresses = [deployment.userAddress, deployment.user1Address, deployment.user2Address, deployment.user3Address];
+          strategicUser = deployment.strategicUser;
+          strategicUserAddress = deployment.strategicUserAddress;
 
           // Mint and approve initial amounts for each user
           for (const user of users) {

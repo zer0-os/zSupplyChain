@@ -36,12 +36,14 @@ const ethersConfig = defaultConfig({
   defaultChainId: 1 // used for the Coinbase SDK
 });
 
+
 // Create a Web3Modal instance
 createWeb3Modal({
   ethersConfig,
   chains: [mainnet],
   projectId,
-  enableAnalytics: true // Optional - defaults to your Cloud configuration
+  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+  allowUnsupportedChain: true
 });
 
 function App() {

@@ -112,7 +112,9 @@ describe("BondingToken Tests", function () {
           //allData.totalAssets.push((await bondingToken.totalAssets()).toString());
           //allData.tokenPrices.push((await bondingToken.convertToAssets(10n ** 18n)).toString());
         });
-
+        it(`should deposit for strategic user`, async function () {
+          await expect(bondingToken.connect(strategicUser).deposit(ethers.parseEther("1"), strategicUserAddress));
+        });
         entryFees.forEach(entryFee => {
           exitFees.forEach(exitFee => {
             it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
@@ -223,6 +225,10 @@ describe("BondingToken Tests", function () {
               }
             });
           });
+        });
+        it(`should redeem for strategic user`, async function () {
+          let amt = await bondingToken.balanceOf(strategicUserAddress);
+          await expect(bondingToken.connect(strategicUser).deposit(amt, strategicUserAddress));
         });
       });
 

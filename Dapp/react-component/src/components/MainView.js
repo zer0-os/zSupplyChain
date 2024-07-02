@@ -1,9 +1,11 @@
 import React from 'react';
 import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react';
-import { BrowserProvider, Contract, formatUnits } from 'ethers';
+import { ethers, BrowserProvider, Contract} from 'ethers';
+//import BTAbi from './abi/BTAbi.json';
+//import RTAbi from './abi/RTAbi.json';
 
-const BTAddress = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
-const RTAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const BTAddress = '0x610178dA211FEF7D417bC0e6FeD39F05609AD788';
+const RTAddress = '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6';
 
 // The BondingToken Contract ABI, which is a common contract interface
 // for tokens (this is the Human-Readable ABI format)
@@ -1276,39 +1278,64 @@ const RTAbi = [
 ]
 
 function MainView() {
-  const { address, chainId, isConnected, isConnecting, isDisconnected } = useWeb3ModalAccount();
+  const { address, isConnected, isConnecting } = useWeb3ModalAccount();
   const { walletProvider } = useWeb3ModalProvider();
+
+  let BTBalance = 0;
+  let RTBalance = 0;
+  let depositAmount = '1';
+  let redeemAmount = '1';
 
   async function getBalance() {
     if (!isConnected) throw Error('User disconnected');
 
     const ethersProvider = new BrowserProvider(walletProvider);
     const signer = await ethersProvider.getSigner();
-    // The Contract object
-    const BTContract = new Contract(BTAddress, BTAbi, signer);
-    const BTBalance = await BTContract.balanceOf(address);
 
+    const BTContract = new Contract(BTAddress, BTAbi, signer);
     const RTContract = new Contract(RTAddress, RTAbi, signer);
-    const RTBalance = await RTContract.balanceOf(address);
-    
-    console.log(BTBalance);
-    console.log(RTBalance);
+
+    BTBalance = await BTContract.balanceOf(address);
+    RTBalance = await RTContract.balanceOf(address);
+
+    document.getElementById('btBalance').innerText = BTBalance.toString();
+    document.getElementById('rtBalance').innerText = RTBalance.toString();
   }
 
-  async function signMessage() {
-    if (!walletProvider) return;
+  async function deposit() {
+    if (!isConnected) throw Error('User disconnected');
 
     const ethersProvider = new BrowserProvider(walletProvider);
-    const signer = ethersProvider.getSigner();
-    try {
-      const signature = await signer.signMessage('hello world');
-      console.log('Signature:', signature);
-    } catch (error) {
-      console.error('Error signing message:', error);
-    }
+    const signer = await ethersProvider.getSigner();
+
+    const BTContract = new Contract(BTAddress, BTAbi, signer);
+    const amount = ethers.parseEther(depositAmount);
+    const tx = await BTContract.deposit(amount, address);
+    await tx.wait();
+    getBalance();
   }
 
-  // Conditional rendering based on walletConnect connection status
+  async function redeem() {
+    if (!isConnected) throw Error('User disconnected');
+
+    const ethersProvider = new BrowserProvider(walletProvider);
+    const signer = await ethersProvider.getSigner();
+
+    const BTContract = new Contract(BTAddress, BTAbi, signer);
+    const amount = ethers.parseEther(redeemAmount);
+    const tx = await BTContract.redeem(amount, address, address);
+    await tx.wait();
+    getBalance();
+  }
+
+  function handleDepositAmountChange(event) {
+    depositAmount = event.target.value;
+  }
+
+  function handleRedeemAmountChange(event) {
+    redeemAmount = event.target.value;
+  }
+
   if (isConnecting) {
     return (
       <div className="MainView">
@@ -1317,7 +1344,7 @@ function MainView() {
     );
   }
 
-  if (isDisconnected) {
+  if (!isConnected) {
     return (
       <div className="MainView">
         <p>Please connect wallet</p>
@@ -1327,8 +1354,24 @@ function MainView() {
 
   return (
     <div className="MainView">
-      <button className="zButton" onClick={signMessage}>Join Game</button>
-      <button className="zButton" onClick={getBalance}>Get Balance</button>
+      <p>BT Balance: <span id="btBalance">{BTBalance}</span></p>
+      <p>RT Balance: <span id="rtBalance">{RTBalance}</span></p>
+      <div className="inputContainer">
+        <input 
+          type="text" 
+          onChange={handleDepositAmountChange} 
+          placeholder="Buy Amount" 
+        />
+        <button className="zButton" onClick={deposit}>Buy</button>
+      </div>
+      <div className="inputContainer">
+        <input 
+          type="text" 
+          onChange={handleRedeemAmountChange} 
+          placeholder="Sell Amount" 
+        />
+        <button className="zButton" onClick={redeem}>Sell</button>
+      </div>
     </div>
   );
 }

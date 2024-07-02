@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
 function Board() {
-  //const { address, isConnecting, isDisconnected } = useAccount();
-  const gridSize = 6; // Size of the grid (6x6)
-  const initialGrid = Array(gridSize).fill().map(() => Array(gridSize).fill(false)); // Initial state of the grid
+  const gridSize = 32; // Size of the grid (32x32)
+  const initialGrid = Array(gridSize).fill().map(() => 
+    Array(gridSize).fill().map(() => Math.random() < 0.5) // Randomly set true or false
+  );
 
   const [grid, setGrid] = useState(initialGrid);
 
@@ -13,7 +14,7 @@ function Board() {
     );
     setGrid(newGrid);
   };
-  
+
   return (
     <div className="MainView">
       <div className="grid">
@@ -22,7 +23,7 @@ function Board() {
             {row.map((cell, colIndex) => (
               <div
                 key={colIndex}
-                className={`tile ${cell ? 'active' : ''}`}
+                className={`tile ${cell ? 'green' : 'blue'}`} // Use 'green' or 'blue' class
                 onClick={() => handleClick(rowIndex, colIndex)}
               />
             ))}
@@ -34,3 +35,4 @@ function Board() {
 }
 
 export default Board;
+

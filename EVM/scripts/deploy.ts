@@ -2,7 +2,8 @@ import { ethers } from "hardhat";
 async function main() {
     const [deployer] = await ethers.getSigners();
     const deployerAddress = await deployer.getAddress();
-    console.log(deployerAddress);
+    console.log("deployer ", deployerAddress);
+
     const reserveTokenFactory = await ethers.getContractFactory("ERC20Token");
     const reserveToken = await reserveTokenFactory.deploy("Wilder World", "WILD");
     const reserveTokenAddress = await reserveToken.getAddress();
@@ -12,11 +13,11 @@ async function main() {
     const bondingToken = await bondingTokenFactory.deploy("Bonded WILD", "BWLD", reserveTokenAddress);
     const bondingTokenAddress = await bondingToken.getAddress();
     await reserveToken.approve(bondingTokenAddress, "1000000000000000000000");
-    /*
+    
     const landFactory = await ethers.getContractFactory("Land");
-    const land = await landFactory.deploy()
-    */
-    // Log the address of the deployed contracts
+    const land = await landFactory.deploy(bondingTokenAddress)
+    const landAddress = await land.getAddress()
+    
     console.log("BondingToken deployed to:", bondingTokenAddress);
     console.log("ERC20 deployed to ", reserveTokenAddress);
     console.log("Land deployed to ", landAddress);

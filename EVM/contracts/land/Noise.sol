@@ -1,4 +1,6 @@
-pragma solidity ^0.8.24
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
 
 library Noise{
     int64 constant max = 256;
@@ -8,7 +10,7 @@ library Noise{
         return ((((nn * 100000)) / (1073741824)))%max;
     }
 
-    function local_average_noise(uint8 x, uint8 y) public pure returns(int64) {
+    function local_average_noise(int64 x, int64 y) public pure returns(int64) {
         int64 xq = x + ((y-x)/3);
         int64 yq = y - ((x+y)/3);
 
@@ -23,7 +25,7 @@ library Noise{
 
     int64 constant iterations = 5;
 
-    function stacked_squares(uint8 x, uint8 y) public pure returns(int64) {
+    function stacked_squares(int64 x, int64 y) public pure returns(int64) {
 
         int64 accumulator;
         for(int64 iteration_idx = 0; iteration_idx < iterations; iteration_idx++){
@@ -32,5 +34,9 @@ library Noise{
         }
 
         return accumulator*1000/(iterations*2);
+    }
+
+	function get_tile(int64 x, int64 y) public pure returns (int64) {
+        return (local_average_noise(x/4,y/7) + stacked_squares(x/25,y/42))/2000;
     }
 }

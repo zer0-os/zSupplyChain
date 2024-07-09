@@ -44,8 +44,18 @@ describe("BondingToken Tests", function () {
       }
 
       const basis = 100000;
-      const entryFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%, 50%, 100% (expect fail)
-      const exitFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%, 50%, 100% (expect fail)
+      //const entryFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%, 50%, 100% (expect fail)
+      //const exitFees = [0, 100, 1000, 10000, basis/2, basis]; // 0%, .1%, 1%, 10%, 50%, 100% (expect fail)
+
+      //const entryFees = [basis/2 + 1, basis/2, 10000, 1000, 100, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+      //const exitFees = [basis/2 + 1, basis/2, 10000, 1000, 100, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+
+      //const entryFees = [0, 0, 0, 0, 0, 0, 0]
+      //const exitFees = [0, 0, 0, 0, 0, 0, 0]
+      
+      const exitFees = [0, basis/100000, basis/10000, basis/1000, basis/100, basis/10, basis/2, basis/2 + 1]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+      const entryFees = [basis/2 + 1, basis/2, basis/10, basis/100, basis/1000, basis/10000, basis/100000, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+      
       const numUsers = [1, 2, 3, 4];
 
       async function getExpectedShares(bondingToken: BondingTokenType, assets: bigint) {

@@ -4,8 +4,8 @@ import { ethers, BrowserProvider, Contract} from 'ethers';
 //import BTAbi from './abi/BTAbi.json';
 //import RTAbi from './abi/RTAbi.json';
 
-const BTAddress = '0x610178dA211FEF7D417bC0e6FeD39F05609AD788';
-const RTAddress = '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6';
+const BTAddress = '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6';
+const RTAddress = '0x0165878A594ca255338adfa4d48449f69242Eb8F';
 
 // The BondingToken Contract ABI, which is a common contract interface
 // for tokens (this is the Human-Readable ABI format)
@@ -1292,6 +1292,8 @@ function MainView() {
     const ethersProvider = new BrowserProvider(walletProvider);
     const signer = await ethersProvider.getSigner();
 
+    console.log(signer)
+
     const BTContract = new Contract(BTAddress, BTAbi, signer);
     const RTContract = new Contract(RTAddress, RTAbi, signer);
 
@@ -1354,6 +1356,7 @@ function MainView() {
 
   return (
     <div className="MainView">
+      <button className="zButton" onClick={getBalance}>Get Balance</button>
       <p>BT Balance: <span id="btBalance">{BTBalance}</span></p>
       <p>RT Balance: <span id="rtBalance">{RTBalance}</span></p>
       <div className="inputContainer">

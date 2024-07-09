@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 
+//import Land from '../data/Land.json';
+
 function Board() {
+  //console.log(Land);
   const gridSize = 32; // Size of the grid (32x32)
   const initialGrid = Array(gridSize).fill().map(() => 
     Array(gridSize).fill().map(() => Math.random() < 0.5) // Randomly set true or false

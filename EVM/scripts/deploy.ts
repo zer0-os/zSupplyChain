@@ -13,14 +13,14 @@ async function main() {
     const bondingToken = await bondingTokenFactory.deploy("Bonded WILD", "BWLD", reserveTokenAddress);
     const bondingTokenAddress = await bondingToken.getAddress();
     await reserveToken.approve(bondingTokenAddress, "1000000000000000000000");
-    
+    /*
     const landFactory = await ethers.getContractFactory("Land");
     const land = await landFactory.deploy(bondingTokenAddress)
     const landAddress = await land.getAddress()
-    
+    */
     console.log("BondingToken deployed to:", bondingTokenAddress);
     console.log("ERC20 deployed to ", reserveTokenAddress);
-    console.log("Land deployed to ", landAddress);
+    //console.log("Land deployed to ", landAddress);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

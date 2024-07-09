@@ -10,8 +10,7 @@ const { ethers } = hre;
 type BondingTokenType = BondingTokenLinear | BondingTokenQuadratic;
 
 const contractNames = [
-  { name: "BondingTokenLinear", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" }
-  //{ name: "BondingTokenQuadratic", tokenName: "UNREFINED GOLD", tokenSymbol: "COAL" }
+  { name: "BondingToken", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" }
 ];
 
 describe("BondingToken Tests", function () {
@@ -55,7 +54,7 @@ describe("BondingToken Tests", function () {
       
       const exitFees = [0, basis/100000, basis/10000, basis/1000, basis/100, basis/10, basis/2, basis/2 + 1]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
       const entryFees = [basis/2 + 1, basis/2, basis/10, basis/100, basis/1000, basis/10000, basis/100000, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
-      
+
       const numUsers = [1, 2, 3, 4];
 
       async function getExpectedShares(bondingToken: BondingTokenType, assets: bigint) {

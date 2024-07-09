@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
-contract BondingTokenLinear is Ownable, ERC4626{
+contract BondingToken is Ownable, ERC4626{
     using Math for uint;
 
     uint internal constant BASIS = 1e5;

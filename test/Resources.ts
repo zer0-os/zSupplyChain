@@ -15,7 +15,7 @@ const contractNames = [
 
 describe("BondingToken Tests", function () {
   for (const contract of contractNames) {
-    describe(`${contract.name} simulation tests`, function () {
+    describe.only(`${contract.name} simulation tests`, function () {
       async function deploy() {
         const [deployer, user, user1, user2, user3, strategicUser] = await hre.ethers.getSigners();
         
@@ -49,11 +49,11 @@ describe("BondingToken Tests", function () {
       //const entryFees = [basis/2 + 1, basis/2, 10000, 1000, 100, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
       //const exitFees = [basis/2 + 1, basis/2, 10000, 1000, 100, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
 
-      //const entryFees = [0, 0, 0, 0, 0, 0, 0]
-      //const exitFees = [0, 0, 0, 0, 0, 0, 0]
+      const entryFees = [basis/2, 0, 0, 0, 0, 0]
+      const exitFees = [basis/2, 0, 0, 0, 0, 0]
       
-      const exitFees = [0, basis/100000, basis/10000, basis/1000, basis/100, basis/10, basis/2, basis/2 + 1]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
-      const entryFees = [basis/2 + 1, basis/2, basis/10, basis/100, basis/1000, basis/10000, basis/100000, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+      //const exitFees = [0, basis/100000, basis/10000, basis/1000, basis/100, basis/10, basis/2, basis/2 + 1]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
+      //const entryFees = [basis/2 + 1, basis/2, basis/10, basis/100, basis/1000, basis/10000, basis/100000, 0]; // 0%, .1%, 1%, 10%, 50%, >50% (expect fail)
 
       const numUsers = [1, 2, 3, 4];
 

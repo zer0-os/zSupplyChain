@@ -15,7 +15,7 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
 contract BondingToken is IBondingToken, Ownable, ERC4626{
     using Math for uint;
 
-    uint internal constant BASIS = 1e5;
+    uint public constant BASIS = 1e5;
 
     uint entryFee;
     uint exitFee;
@@ -56,13 +56,5 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     function setExitFee(uint256 exitFeeBasisPoints) public override onlyOwner{
         require(BASIS >= exitFeeBasisPoints*2, "Fee exceeds 50 percent");
         exitFee = exitFeeBasisPoints;
-    }
-
-    function getEntryFeeRatio() public view override returns (uint){
-        return entryFee/BASIS;
-    }
-
-    function getExitFeeRatio() public view override returns (uint){
-        return exitFee/BASIS;
     }
 }

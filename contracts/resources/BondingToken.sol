@@ -17,8 +17,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
 
     uint public constant BASIS = 1e5;
 
-    uint entryFee;
-    uint exitFee;
+    uint public entryFee;
+    uint public exitFee;
 
     constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) 
     Ownable(msg.sender)
@@ -27,34 +27,66 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
         setEntryFee(entryFeeBasisPoints);
         setExitFee(exitFeeBasisPoints);
     }
-
-    function previewDeposit(uint assets) public view override returns(uint256){
+    
+    /**
+     * @dev Previews the number of shares that would be minted for the given amount of assets,
+     * after applying the entry fee.
+     * @param assets The amount of assets to deposit.
+     * @return shares The amount of shares that would be minted.
+     */
+    function previewDeposit(uint assets) public view override returns(uint256) {
         uint shares = super.previewDeposit(assets);
         return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
-    function previewMint(uint shares) public view override returns(uint256){
-        uint minted = super.previewMint(shares); 
+    /**
+     * @dev Previews the amount of assets required to mint the given number of shares,
+     * after applying the entry fee.
+     * @param shares The amount of shares to mint.
+     * @return assets The amount of assets required.
+     */
+    function previewMint(uint shares) public view override returns(uint256) {
+        uint minted = super.previewMint(shares);
         return minted - minted.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
     }
 
-    function previewRedeem(uint shares) public view override returns(uint256){
-        uint assets = super.previewRedeem(shares); 
+    /**
+     * @dev Previews the number of assets that would be redeemed for the given amount of shares,
+     * after applying the exit fee.
+     * @param shares The amount of shares to redeem.
+     * @return assets The amount of assets that would be redeemed.
+     */
+    function previewRedeem(uint shares) public view override returns(uint256) {
+        uint assets = super.previewRedeem(shares);
         return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
 
-    function previewWithdraw(uint assets) public view override returns(uint256){
+    /**
+     * @dev Previews the number of shares that would be burned for the given amount of assets withdrawn,
+     * after applying the exit fee.
+     * @param assets The amount of assets to withdraw.
+     * @return shares The amount of shares that would be burned.
+     */
+    function previewWithdraw(uint assets) public view override returns(uint256) {
         uint shares = super.previewWithdraw(assets);
         return shares - shares.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
     }
 
-    function setEntryFee(uint256 entryFeeBasisPoints) public override onlyOwner{
-        require(BASIS >= entryFeeBasisPoints*2, "Fee exceeds 50 percent");
+    /**
+     * @dev Sets the entry fee.
+     * @param entryFeeBasisPoints The new entry fee in basis points. Must not exceed 50%.
+     */
+    function setEntryFee(uint256 entryFeeBasisPoints) public override onlyOwner {
+        require(BASIS >= entryFeeBasisPoints * 2, "Fee exceeds 50 percent");
         entryFee = entryFeeBasisPoints;
     }
 
-    function setExitFee(uint256 exitFeeBasisPoints) public override onlyOwner{
-        require(BASIS >= exitFeeBasisPoints*2, "Fee exceeds 50 percent");
+    /**
+     * @dev Sets the exit fee.
+     * @param exitFeeBasisPoints The new exit fee in basis points. Must not exceed 50%.
+     */
+    function setExitFee(uint256 exitFeeBasisPoints) public override onlyOwner {
+        require(BASIS >= exitFeeBasisPoints * 2, "Fee exceeds 50 percent");
         exitFee = exitFeeBasisPoints;
     }
 }

@@ -1,6 +1,7 @@
 Bonding Tokens
 
 Overview
+
 Bonding Tokens (BT) are ERC-20 tokens with issuance managed by a bonding curve against a Reserve Token (RT). This system enables dynamic token minting and burning based on market demand, allowing for continuous price discovery without the need for an external exchange or liquidity pool.
 Key Concepts
 BT: Bonding Tokens, the tokens being bought and sold.
@@ -9,13 +10,16 @@ Bonding Curve: A mathematical function defining the relationship between BTs and
 Entry Fee: A fee applied when purchasing BTs.
 Exit Fee: A fee applied when selling BTs.
 
+
 Mechanics
+
 Buying BT
 Users can buy BTs by depositing RTs into the contract. The amount of BTs minted to the user is determined by the bonding curve, minus an entry fee.
 
 
 Selling BT
 Users can sell BTs to receive RTs. The amount of RTs received by the user is determined by the bonding curve, minus an exit fee.
+
 
 On entry and exit, the vault takes a fee that increases its reserves and in turn the bonding token price.
 

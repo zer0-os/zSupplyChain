@@ -5,7 +5,7 @@ Token economy and utility systems for distribution, converion, and interaction o
 
 RESOURCES
 
-ERC20 tokens that are distributed by decentralized market mechanisms like bonding tokens.
+Bonding Tokens that continuously mint ERC20s with decentralized market mechanics.
 
 
 CONVERTERS

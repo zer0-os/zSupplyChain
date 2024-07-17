@@ -8,7 +8,8 @@ import { ERC20Token } from "../typechain-types/contracts/mock";
 const { ethers } = hre;
 
 const contractNames = [
-  { name: "BondingToken", tokenName: "UNREFINED COAL", tokenSymbol: "GOLD" }
+  { name: "BondingToken", tokenName: "COAL", tokenSymbol: "COL" },
+  { name: "BondingToken", tokenName: "GOLD", tokenSymbol: "GLD" }
 ];
 
 describe("BondingToken Tests", function () {

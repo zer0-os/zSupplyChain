@@ -2,8 +2,6 @@
 pragma solidity ^0.8.24;
 
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 /**
  * @title IBondingToken
  * @dev Interface for the BondingToken contract.

@@ -9,8 +9,8 @@ async function main() {
     const reserveTokenAddress = await reserveToken.getAddress();
     await reserveToken.mint(deployerAddress, "1000000000000000000000");
 
-    const bondingTokenFactory = await ethers.getContractFactory("ERC4626Linear");
-    const bondingToken = await bondingTokenFactory.deploy("Bonded WILD", "BWLD", reserveTokenAddress);
+    const bondingTokenFactory = await ethers.getContractFactory("BondingToken");
+    const bondingToken = await bondingTokenFactory.deploy("Bonded WILD", "BWLD", reserveTokenAddress, 0, 0);
     const bondingTokenAddress = await bondingToken.getAddress();
     await reserveToken.approve(bondingTokenAddress, "1000000000000000000000");
     /*

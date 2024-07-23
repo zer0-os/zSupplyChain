@@ -15,7 +15,7 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
 contract BondingToken is IBondingToken, Ownable, ERC4626{
     using Math for uint;
 
-    uint public constant BASIS = 1e5;
+    uint public constant BASIS = 1e4;
 
     uint public entryFee;
     uint public exitFee;

@@ -16,6 +16,28 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
 contract BondingToken is IBondingToken, Ownable, ERC4626{
     using Math for uint256;
 
+    /// @notice Emitted when the contract is initialized.
+    /// @param name The name of the ERC20 token.
+    /// @param symbol The symbol of the ERC20 token.
+    /// @param reserveToken The ERC20 token used as the reserve asset.
+    /// @param entryFeeBasisPoints The initial entry fee in basis points.
+    /// @param exitFeeBasisPoints The initial exit fee in basis points.
+    event BondingTokenDeployed(
+        string name,
+        string symbol,
+        address reserveToken,
+        uint256 entryFeeBasisPoints,
+        uint256 exitFeeBasisPoints
+    );
+
+    /// @notice Emitted when the entry fee is set.
+    /// @param entryFeeBasisPoints The new entry fee in basis points.
+    event EntryFeeSet(uint256 entryFeeBasisPoints);
+
+    /// @notice Emitted when the exit fee is set.
+    /// @param exitFeeBasisPoints The new exit fee in basis points.
+    event ExitFeeSet(uint256 exitFeeBasisPoints);
+
     /// @notice The constant basis point used for fee calculations, equivalent to 10000.
     /// @dev This represents 100% in basis points, where 1 basis point is 0.01%.
     uint256 public constant BASIS = 1e4;
@@ -93,6 +115,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     function setEntryFee(uint256 entryFeeBasisPoints) public override onlyOwner {
         require(BASIS >= entryFeeBasisPoints * 2, "Fee exceeds 50 percent");
         entryFee = entryFeeBasisPoints;
+        emit EntryFeeSet(entryFeeBasisPoints);
     }
 
     /**
@@ -102,6 +125,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     function setExitFee(uint256 exitFeeBasisPoints) public override onlyOwner {
         require(BASIS >= exitFeeBasisPoints * 2, "Fee exceeds 50 percent");
         exitFee = exitFeeBasisPoints;
+        emit ExitFeeSet(exitFeeBasisPoints);
     }
 
     /// @dev Calculates the fees that should be added to an amount `assets` that does not already include fees.

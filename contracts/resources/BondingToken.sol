@@ -27,6 +27,16 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     /// @dev This fee is applied when redeeming and withdrawing.
     uint public exitFee;
 
+    /// @notice Initializes the contract with the given parameters and sets up the necessary inheritance.
+    /// @param name The name of the ERC20 token.
+    /// @param symbol The symbol of the ERC20 token.
+    /// @param reserveToken The ERC20 token used as the reserve asset.
+    /// @param entryFeeBasisPoints The entry fee in basis points (1 basis point = 0.01%).
+    /// @param exitFeeBasisPoints The exit fee in basis points (1 basis point = 0.01%).
+    /// @dev This constructor initializes the contract by setting the entry and exit fees.
+    /// @dev If the DECIMAL_OFFSET between the asset and share tokens is 0, 
+    /// the user SHOULD make a significant initial deposit to avoid the inflation attack.
+    /// See: https://docs.openzeppelin.com/contracts/5.x/erc4626
     constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) 
     Ownable(msg.sender)
     ERC4626(reserveToken) 

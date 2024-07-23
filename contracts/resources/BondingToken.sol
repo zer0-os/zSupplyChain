@@ -13,19 +13,19 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
  */
 
 contract BondingToken is IBondingToken, Ownable, ERC4626{
-    using Math for uint;
+    using Math for uint256;
 
     /// @notice The constant basis point used for fee calculations, equivalent to 10000.
     /// @dev This represents 100% in basis points, where 1 basis point is 0.01%.
-    uint public constant BASIS = 1e4;
+    uint256 public constant BASIS = 1e4;
 
     /// @notice The entry fee basis points.
     /// @dev This fee is applied when depositing and minting.
-    uint public entryFee;
+    uint256 public entryFee;
 
     /// @notice The exit fee basis points.
     /// @dev This fee is applied when redeeming and withdrawing.
-    uint public exitFee;
+    uint256 public exitFee;
 
     /// @notice Initializes the contract with the given parameters and sets up the necessary inheritance.
     /// @param name The name of the ERC20 token.
@@ -37,7 +37,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     /// @dev If the DECIMAL_OFFSET between the asset and share tokens is 0, 
     /// the user SHOULD make a significant initial deposit to avoid the inflation attack.
     /// See: https://docs.openzeppelin.com/contracts/5.x/erc4626
-    constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) 
+    constructor(string memory name, string memory symbol, IERC20 reserveToken, uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints) 
     Ownable(msg.sender)
     ERC4626(reserveToken) 
     ERC20(name, symbol){
@@ -51,7 +51,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @param assets The amount of assets to deposit.
      * @return shares The amount of shares that would be minted.
      */
-    function previewDeposit(uint assets) public view override returns(uint256) {
+    function previewDeposit(uint256 assets) public view override returns(uint256) {
         return super.previewDeposit(assets - _feeOnTotal(assets, entryFee));
     }
 
@@ -61,7 +61,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @param shares The amount of shares to mint.
      * @return assets The amount of assets required.
      */
-    function previewMint(uint shares) public view override returns(uint256) {
+    function previewMint(uint256 shares) public view override returns(uint256) {
         uint256 assets = super.previewMint(shares);
         return assets + _feeOnRaw(assets, entryFee);
     }
@@ -72,7 +72,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @param shares The amount of shares to redeem.
      * @return assets The amount of assets that would be redeemed.
      */
-    function previewRedeem(uint shares) public view override returns(uint256) {
+    function previewRedeem(uint256 shares) public view override returns(uint256) {
         uint256 assets = super.previewRedeem(shares);
         return assets - _feeOnTotal(assets, exitFee);
     }
@@ -83,7 +83,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @param assets The amount of assets to withdraw.
      * @return shares The amount of shares that would be burned.
      */
-    function previewWithdraw(uint assets) public view override returns(uint256) {
+    function previewWithdraw(uint256 assets) public view override returns(uint256) {
         return super.previewWithdraw(assets + _feeOnRaw(assets, exitFee));
     }
 

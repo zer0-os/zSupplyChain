@@ -67,8 +67,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return shares The amount of shares that would be burned.
      */
     function previewWithdraw(uint assets) public view override returns(uint256) {
-        uint shares = super.previewWithdraw(assets);
-        return shares - shares.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+        return super.previewWithdraw(assets + _feeOnRaw(assets, _exitFeeBasisPoints()));
     }
 
     /**

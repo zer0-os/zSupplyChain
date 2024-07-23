@@ -45,7 +45,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return assets The amount of assets required.
      */
     function previewMint(uint shares) public view override returns(uint256) {
-        return super.previewMint(shares + _feeOnRaw(assets, entryFee));
+        return super.previewMint(shares) + _feeOnRaw(assets, entryFee);
     }
 
     /**
@@ -55,8 +55,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return assets The amount of assets that would be redeemed.
      */
     function previewRedeem(uint shares) public view override returns(uint256) {
-        uint assets = super.previewRedeem(shares);
-        return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+        return super.previewRedeem(shares) - _feeOnTotal(assets, exitFee);
     }
 
     /**

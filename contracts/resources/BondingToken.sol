@@ -56,7 +56,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return assets The amount of assets that would be redeemed.
      */
     function previewRedeem(uint shares) public view override returns(uint256) {
-        return super.previewRedeem(shares) - _feeOnTotal(assets, exitFee);
+        uint256 assets = super.previewRedeem(shares);
+        return assets - _feeOnTotal(assets, exitFee);
     }
 
     /**

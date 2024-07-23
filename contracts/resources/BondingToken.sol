@@ -44,6 +44,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     ERC20(name, symbol){
         setEntryFee(entryFeeBasisPoints);
         setExitFee(exitFeeBasisPoints);
+        emit BondingTokenDeployed(name, symbol, address(reserveToken), entryFeeBasisPoints, exitFeeBasisPoints);
     }
     
     /**
@@ -116,5 +117,9 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     /// Used in {IERC4626-deposit} and {IERC4626-redeem} operations.
     function _feeOnTotal(uint256 assets, uint256 feeBasisPoints) private pure returns (uint256) {
         return assets.mulDiv(feeBasisPoints, feeBasisPoints + BASIS, Math.Rounding.Ceil);
+    }
+
+    function _decimalsOffset() internal view override returns (uint8) {
+        return 1;
     }
 }

@@ -10,6 +10,7 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
 /**
  * @title BondingToken
  * @dev BondingToken contract. Enables entry and exit fees on an ERC4626 vault.
+ * @custom:security-contact admin@zero.tech
  */
 
 contract BondingToken is IBondingToken, Ownable, ERC4626{

@@ -15,9 +15,16 @@ import {ERC4626, ERC20, Math} from "@openzeppelin/contracts/token/ERC20/extensio
 contract BondingToken is IBondingToken, Ownable, ERC4626{
     using Math for uint;
 
+    /// @notice The constant basis point used for fee calculations, equivalent to 10000.
+    /// @dev This represents 100% in basis points, where 1 basis point is 0.01%.
     uint public constant BASIS = 1e4;
 
+    /// @notice The entry fee basis points.
+    /// @dev This fee is applied when depositing and minting.
     uint public entryFee;
+
+    /// @notice The exit fee basis points.
+    /// @dev This fee is applied when redeeming and withdrawing.
     uint public exitFee;
 
     constructor(string memory name, string memory symbol, IERC20 reserveToken, uint entryFeeBasisPoints, uint exitFeeBasisPoints) 

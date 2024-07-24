@@ -21,17 +21,15 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     error ExitFeeExceedsLimit(uint256 exitFeeBasisPoints);
 
     /// @notice Emitted when the contract is initialized.
+    /// @param deployer The address of the contract deployer
     /// @param name The name of the ERC20 token.
     /// @param symbol The symbol of the ERC20 token.
     /// @param reserveToken The ERC20 token used as the reserve asset.
-    /// @param entryFeeBasisPoints The initial entry fee in basis points.
-    /// @param exitFeeBasisPoints The initial exit fee in basis points.
     event BondingTokenDeployed(
+        address deployer,
         string name,
         string symbol,
-        address reserveToken,
-        uint256 entryFeeBasisPoints,
-        uint256 exitFeeBasisPoints
+        address reserveToken
     );
 
     /// @notice Emitted when the entry fee is set.
@@ -74,7 +72,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     {
         setEntryFee(entryFeeBasisPoints);
         setExitFee(exitFeeBasisPoints);
-        emit BondingTokenDeployed(name, symbol, address(reserveToken), entryFeeBasisPoints, exitFeeBasisPoints);
+        emit BondingTokenDeployed(msg.sender, name, symbol, address(reserveToken));
     }
 
     /**
@@ -155,7 +153,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
         return assets.mulDiv(feeBasisPoints, feeBasisPoints + BASIS, Math.Rounding.Ceil);
     }
 
-    function _decimalsOffset() internal view override returns (uint8) {
+    /// @dev Decimal offset is increased from 0 to avoid inflation attack due to second round-in-favor-of-protocol introduced by fees
+    function _decimalsOffset() internal view virtual override returns (uint8) {
         return 1;
     }
 }

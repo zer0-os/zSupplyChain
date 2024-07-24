@@ -24,8 +24,6 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     /// @param name The name of the ERC20 token.
     /// @param symbol The symbol of the ERC20 token.
     /// @param reserveToken The ERC20 token used as the reserve asset.
-    /// @param entryFeeBasisPoints The initial entry fee in basis points.
-    /// @param exitFeeBasisPoints The initial exit fee in basis points.
     event BondingTokenDeployed(
         string name,
         string symbol,

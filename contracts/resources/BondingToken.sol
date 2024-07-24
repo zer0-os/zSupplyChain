@@ -21,10 +21,12 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     error ExitFeeExceedsLimit(uint256 exitFeeBasisPoints);
 
     /// @notice Emitted when the contract is initialized.
+    /// @param deployer The address of the contract deployer
     /// @param name The name of the ERC20 token.
     /// @param symbol The symbol of the ERC20 token.
     /// @param reserveToken The ERC20 token used as the reserve asset.
     event BondingTokenDeployed(
+        address deployer,
         string name,
         string symbol,
         address reserveToken
@@ -70,7 +72,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     {
         setEntryFee(entryFeeBasisPoints);
         setExitFee(exitFeeBasisPoints);
-        emit BondingTokenDeployed(name, symbol, address(reserveToken));
+        emit BondingTokenDeployed(msg.sender, name, symbol, address(reserveToken));
     }
 
     /**

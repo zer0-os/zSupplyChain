@@ -29,9 +29,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     event BondingTokenDeployed(
         string name,
         string symbol,
-        address reserveToken,
-        uint256 entryFeeBasisPoints,
-        uint256 exitFeeBasisPoints
+        address reserveToken
     );
 
     /// @notice Emitted when the entry fee is set.

@@ -74,7 +74,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     {
         setEntryFee(entryFeeBasisPoints);
         setExitFee(exitFeeBasisPoints);
-        emit BondingTokenDeployed(name, symbol, address(reserveToken), entryFeeBasisPoints, exitFeeBasisPoints);
+        emit BondingTokenDeployed(name, symbol, address(reserveToken));
     }
 
     /**

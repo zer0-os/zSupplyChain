@@ -35,8 +35,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return shares The amount of shares that would be minted.
      */
     function previewDeposit(uint assets) public view override returns(uint256) {
-        uint shares = super.previewDeposit(assets);
-        return shares - shares.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
+        return super.previewDeposit(assets - _feeOnTotal(assets, entryFee));
     }
 
     /**
@@ -46,8 +45,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return assets The amount of assets required.
      */
     function previewMint(uint shares) public view override returns(uint256) {
-        uint minted = super.previewMint(shares);
-        return minted - minted.mulDiv(entryFee, BASIS, Math.Rounding.Ceil);
+        uint256 assets = super.previewMint(shares);
+        return assets + _feeOnRaw(assets, entryFee);
     }
 
     /**
@@ -57,8 +56,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return assets The amount of assets that would be redeemed.
      */
     function previewRedeem(uint shares) public view override returns(uint256) {
-        uint assets = super.previewRedeem(shares);
-        return assets - assets.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+        uint256 assets = super.previewRedeem(shares);
+        return assets - _feeOnTotal(assets, exitFee);
     }
 
     /**
@@ -68,8 +67,7 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
      * @return shares The amount of shares that would be burned.
      */
     function previewWithdraw(uint assets) public view override returns(uint256) {
-        uint shares = super.previewWithdraw(assets);
-        return shares - shares.mulDiv(exitFee, BASIS, Math.Rounding.Ceil);
+        return super.previewWithdraw(assets + _feeOnRaw(assets, exitFee));
     }
 
     /**
@@ -88,5 +86,17 @@ contract BondingToken is IBondingToken, Ownable, ERC4626{
     function setExitFee(uint256 exitFeeBasisPoints) public override onlyOwner {
         require(BASIS >= exitFeeBasisPoints * 2, "Fee exceeds 50 percent");
         exitFee = exitFeeBasisPoints;
+    }
+
+    /// @dev Calculates the fees that should be added to an amount `assets` that does not already include fees.
+    /// Used in {IERC4626-mint} and {IERC4626-withdraw} operations.
+    function _feeOnRaw(uint256 assets, uint256 feeBasisPoints) private pure returns (uint256) {
+        return assets.mulDiv(feeBasisPoints, BASIS, Math.Rounding.Ceil);
+    }
+
+    /// @dev Calculates the fee part of an amount `assets` that already includes fees.
+    /// Used in {IERC4626-deposit} and {IERC4626-redeem} operations.
+    function _feeOnTotal(uint256 assets, uint256 feeBasisPoints) private pure returns (uint256) {
+        return assets.mulDiv(feeBasisPoints, feeBasisPoints + BASIS, Math.Rounding.Ceil);
     }
 }

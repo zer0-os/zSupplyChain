@@ -153,7 +153,8 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
         return assets.mulDiv(feeBasisPoints, feeBasisPoints + BASIS, Math.Rounding.Ceil);
     }
 
-    function _decimalsOffset() internal view override returns (uint8) {
+    /// @dev Decimal offset is increased from 0 to avoid inflation attack due to second round-in-favor-of-protocol introduced by fees
+    function _decimalsOffset() internal view virtual override returns (uint8) {
         return 1;
     }
 }

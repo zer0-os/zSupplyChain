@@ -76,6 +76,17 @@ contract BondingToken is IBondingToken, Ownable, ERC4626 {
     }
 
     /**
+     * @dev Returns the maximum amount of the underlying asset that can be withdrawn from the owner balance in the
+     * Vault, through a withdraw call. 
+     * Overriden with fee limiter.
+     * @param owner The address to check for maximum withdraw
+     */ 
+    function maxWithdraw(address owner) public view virtual override returns (uint256) {
+        uint assets = _convertToAssets(balanceOf(owner), Math.Rounding.Floor);
+        return assets - _feeOnTotal(assets, exitFee);
+    }
+
+    /**
      * @dev Previews the number of shares that would be minted for the given amount of assets,
      * after applying the entry fee.
      * @param assets The amount of assets to deposit.

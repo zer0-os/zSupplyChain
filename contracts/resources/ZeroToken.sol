@@ -150,7 +150,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      */ 
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
         uint assets = _convertToAssets(balanceOf(owner), Math.Rounding.Floor);
-        return assets - _feeOnTotal(assets, vaultExitFee);
+        return assets - _feeOnTotal(assets, vaultExitFee + creatorExitFee + protocolExitFee);
     }
 
     /**
@@ -160,8 +160,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      * @return shares The amount of shares that would be minted.
      */
     function previewDeposit(uint256 assets) public view override returns (uint256) {
-        uint total = assets.mulDiv(protocolEntryFee + creatorEntryFee, BASIS);
-        return super.previewDeposit(total - _feeOnTotal(assets, vaultEntryFee));
+        return super.previewDeposit(assets - _feeOnTotal(assets, vaultEntryFee + creatorEntryFee + protocolEntryFee));
     }
 
     /**
@@ -172,7 +171,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      */
     function previewMint(uint256 shares) public view override returns (uint256) {
         uint256 assets = super.previewMint(shares);
-        return assets + _feeOnRaw(assets, vaultEntryFee);
+        return assets + _feeOnRaw(assets, vaultEntryFee + creatorEntryFee + protocolEntryFee);
     }
 
     /**
@@ -183,7 +182,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      */
     function previewRedeem(uint256 shares) public view override returns (uint256) {
         uint256 assets = super.previewRedeem(shares);
-        return assets - _feeOnTotal(assets,  vaultExitFee);
+        return assets - _feeOnTotal(assets,  vaultExitFee + creatorExitFee + protocolExitFee);
     }
 
     /**
@@ -193,7 +192,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      * @return shares The amount of shares that would be burned.
      */
     function previewWithdraw(uint256 assets) public view override returns (uint256) {
-        return super.previewWithdraw(assets + _feeOnRaw(assets, vaultExitFee));
+        return super.previewWithdraw(assets + _feeOnRaw(assets, vaultExitFee + creatorEntryFee + protocolEntryFee));
     }
 
     /// @dev Send entry fee to {_entryFeeRecipient}. See {IERC4626-_deposit}.
@@ -201,7 +200,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
         uint256 creatorFee = assets.mulDiv(creatorEntryFee, BASIS);
         uint256 protocolFee = assets.mulDiv(protocolEntryFee, BASIS);
 
-        super._deposit(caller, receiver, assets - creatorFee - protocolFee, shares);
+        super._deposit(caller, receiver, assets, shares);
 
         if (protocolFee > 0) {
             SafeERC20.safeTransfer(IERC20(asset()), protocolFeeRecipient, protocolFee);
@@ -222,7 +221,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
         uint256 creatorFee = assets.mulDiv(creatorExitFee, BASIS);
         uint256 protocolFee = assets.mulDiv(protocolExitFee, BASIS);
 
-        super._withdraw(caller, receiver, owner, assets - creatorFee - protocolFee, shares);
+        super._withdraw(caller, receiver, owner, assets, shares);
 
         if (protocolFee > 0) {
             SafeERC20.safeTransfer(IERC20(asset()), protocolFeeRecipient, protocolFee);

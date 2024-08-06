@@ -250,11 +250,11 @@ describe.only("ZeroToken Tests", function () {
       const exitFees = [0, 100]; // 0%, 1%
       const numUsers = [1, 2];
 
-      async function getExpectedShares(bondingToken: BondingToken, assets: bigint) {
+      async function getExpectedShares(bondingToken: ZeroToken, assets: bigint) {
         return await bondingToken.previewDeposit(assets);
       }
 
-      async function getExpectedAssets(bondingToken: BondingToken, shares: bigint) {
+      async function getExpectedAssets(bondingToken: ZeroToken, shares: bigint) {
         return await bondingToken.previewRedeem(shares);
       }
 
@@ -271,7 +271,7 @@ describe.only("ZeroToken Tests", function () {
       };
 
       describe('Verify edge cases', function () {
-        let bondingToken: BondingToken;
+        let bondingToken: ZeroToken;
         let bondingTokenAddress: string;
         let reserveToken: ERC20Token;
         let reserveTokenAddress: string;

@@ -58,13 +58,17 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
     /// @param exitFeeBasisPoints The new exit fee in basis points.
     event CreatorExitFeeSet(uint256 exitFeeBasisPoints);
 
-    /// @notice Emitted when the entry fee recipient is set.
-    /// @param recipient The new entry fee recipient.
-    event EntryFeeRecipientSet(address recipient);
+    /// @notice Emitted when the vault fee recipient is set.
+    /// @param recipient The new vault fee recipient.
+    event VaultFeeRecipientSet(address recipient);
 
-    /// @notice Emitted when the exit fee recipient is set.
-    /// @param recipient The new exit fee recipient.
-    event ExitFeeRecipientSet(address recipient);
+    /// @notice Emitted when the protocol fee recipient is set.
+    /// @param recipient The new protocol fee recipient.
+    event ProtocolFeeRecipientSet(address recipient);
+
+    /// @notice Emitted when the creator fee recipient is set.
+    /// @param recipient The new creator fee recipient.
+    event CreatorFeeRecipientSet(address recipient);
 
     /// @notice The constant basis point used for fee calculations, equivalent to 10000.
     /// @dev This represents 100% in basis points, where 1 basis point is 0.01%.
@@ -134,7 +138,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
 
         creatorFeeRecipient = msg.sender;
         protocolFeeRecipient = address(0);
-        
+
         emit BondingTokenDeployed(msg.sender, name, symbol, address(reserveToken));
     }
 
@@ -269,7 +273,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
     }
 
     /**
-     * @dev Sets the protocol fees.
+     * @dev Sets the creator fees.
      * @param entryFeeBasisPoints The new entry fee in basis points. Must not exceed 50%.
      * @param exitFeeBasisPoints The new exit fee in basis points. Must not exceed 50%.
      */
@@ -284,8 +288,8 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
         creatorEntryFee = entryFeeBasisPoints;
         creatorExitFee = exitFeeBasisPoints;
 
-        emit ProtocolEntryFeeSet(entryFeeBasisPoints);
-        emit ProtocolExitFeeSet(exitFeeBasisPoints);
+        emit CreatorEntryFeeSet(entryFeeBasisPoints);
+        emit CreatorExitFeeSet(exitFeeBasisPoints);
     }
 
     /// @dev Calculates the fees that should be added to an amount `assets` that does not already include fees.

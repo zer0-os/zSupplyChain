@@ -12,14 +12,7 @@ interface IZeroToken {
      * @param entryFeeBasisPoints The new entry fee in basis points. Must not exceed 50%.
      */
     function setVaultFees(uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints) external;
-
-    /**
-     * @dev Sets the protocol fees.
-     * @param exitFeeBasisPoints The new exit fee in basis points. Must not exceed 50%.
-     */
-    function setProtocolFees(uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints) external;
-
-
+    
     /**
      * @dev Sets the creator fees.
      * @param exitFeeBasisPoints The new exit fee in basis points. Must not exceed 50%.

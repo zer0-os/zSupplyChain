@@ -1,4 +1,4 @@
-zSupplyChain
+zBanc
 
 Token economy and utility systems for distribution, converion, and interaction of different token standards.
 

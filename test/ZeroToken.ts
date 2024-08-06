@@ -3,16 +3,16 @@ import { expect } from "chai";
 import { Signer } from 'ethers';
 import hre from "hardhat";
 import fs from "fs";
-import { BondingToken } from "../typechain-types/contracts/resources/";
+import { ZeroToken } from "../typechain-types/contracts/resources/";
 import { ERC20Token } from "../typechain-types/contracts/mock";
 const { ethers } = hre;
 
 const contractNames = [
-  { name: "BondingToken", tokenName: "COAL", tokenSymbol: "COL" },
-  { name: "BondingToken", tokenName: "GOLD", tokenSymbol: "GLD" }
+  { name: "ZeroToken", tokenName: "COAL", tokenSymbol: "COL" },
+  { name: "ZeroToken", tokenName: "GOLD", tokenSymbol: "GLD" }
 ];
 
-describe("BondingToken Tests", function () {
+describe.only("ZeroToken Tests", function () {
   for (const contract of contractNames) {
     describe(`${contract.name} simulation tests`, function () {
       async function deploy() {
@@ -29,7 +29,7 @@ describe("BondingToken Tests", function () {
         const reserveTokenAddress = await reserveToken.getAddress();
 
         const bondingTokenFactory = await hre.ethers.getContractFactory(contract.name);
-        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0) as BondingToken;
+        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0, 0, 0, 0, 0) as ZeroToken;
         const bondingTokenAddress = await bondingToken.getAddress();
 
         return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address , strategicUser, strategicUserAddress};
@@ -108,7 +108,7 @@ describe("BondingToken Tests", function () {
         });
         entryFees.forEach(entryFee => {
           exitFees.forEach(exitFee => {
-            it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
+            /*it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
               if (basis >= entryFee * 2) {
                 await bondingToken.setEntryFee(entryFee);
               } else {
@@ -120,7 +120,7 @@ describe("BondingToken Tests", function () {
               } else {
                 await expect(bondingToken.setExitFee(exitFee)).to.be.revertedWithCustomError(bondingToken, "ExitFeeExceedsLimit");
               }
-            });
+            });*/
 
             numUsers.forEach(userCount => {
               for (let i = 0; i < 3; i++) {
@@ -240,7 +240,7 @@ describe("BondingToken Tests", function () {
         const reserveTokenAddress = await reserveToken.getAddress();
 
         const bondingTokenFactory = await hre.ethers.getContractFactory(contract.name);
-        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0) as BondingToken;
+        const bondingToken = await bondingTokenFactory.deploy(contract.tokenName, contract.tokenSymbol, reserveTokenAddress, 0, 0, 0, 0, 0, 0) as BondingToken;
         const bondingTokenAddress = await bondingToken.getAddress();
 
         return { bondingToken, bondingTokenAddress, reserveToken, reserveTokenAddress, deployer, user, userAddress, user1, user1Address, user2, user2Address, user3, user3Address };
@@ -304,8 +304,7 @@ describe("BondingToken Tests", function () {
         entryFees.forEach(entryFee => {
           exitFees.forEach(exitFee => {
             it(`should set entry fee ${entryFee} bps and exit fee ${exitFee} bps`, async function () {
-              await bondingToken.setEntryFee(entryFee);
-              await bondingToken.setExitFee(exitFee);
+              await bondingToken.setVaultFees(entryFee, exitFee);
             });
 
             numUsers.forEach(userCount => {

@@ -137,7 +137,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
         setCreatorFees(creatorEntryFeeBps, creatorExitFeeBps);
 
         creatorFeeRecipient = msg.sender;
-        protocolFeeRecipient = address(0);
+        protocolFeeRecipient = address(0); ///replace with protocol address
 
         emit BondingTokenDeployed(msg.sender, name, symbol, address(reserveToken));
     }
@@ -290,6 +290,14 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
 
         emit CreatorEntryFeeSet(entryFeeBasisPoints);
         emit CreatorExitFeeSet(exitFeeBasisPoints);
+    }
+
+    /**
+     * @dev Sets the creator fee recipient.
+     * @param newRecipient The new creator fee recipient
+     */
+    function setCreatorFeeRecipient(address newRecipient) public onlyOwner {
+        creatorFeeRecipient = newRecipient;
     }
 
     /// @dev Calculates the fees that should be added to an amount `assets` that does not already include fees.

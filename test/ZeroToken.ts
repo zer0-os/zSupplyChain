@@ -48,11 +48,11 @@ describe.only("ZeroToken Tests", function () {
 
       const numUsers = [1, 2, 3, 4];
 
-      async function getExpectedShares(bondingToken: BondingToken, assets: bigint) {
+      async function getExpectedShares(bondingToken: ZeroToken, assets: bigint) {
         return await bondingToken.previewDeposit(assets);
       }
 
-      async function getExpectedAssets(bondingToken: BondingToken, shares: bigint) {
+      async function getExpectedAssets(bondingToken: ZeroToken, shares: bigint) {
         return await bondingToken.previewRedeem(shares);
       }
 
@@ -69,7 +69,7 @@ describe.only("ZeroToken Tests", function () {
       };
 
       describe('Simulate economy with random deposits and redeems', function () {
-        let bondingToken: BondingToken;
+        let bondingToken: ZeroToken;
         let bondingTokenAddress: string;
         let reserveToken: ERC20Token;
         let reserveTokenAddress: string;

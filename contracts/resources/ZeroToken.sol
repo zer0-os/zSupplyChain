@@ -40,14 +40,17 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
 
     /// @notice Emitted when the entry fee is set.
     /// @param entryFeeBasisPoints The new entry fee in basis points.
+    /// @param exitFeeBasisPoints the new exit fee in basis points.
     event VaultFeesSet(uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints);
 
     /// @notice Emitted when the entry fee is set.
     /// @param entryFeeBasisPoints The new entry fee in basis points.
+    /// @param exitFeeBasisPoints the new exit fee in basis points.
     event ProtocolFeesSet(uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints);
 
     /// @notice Emitted when the entry fee is set.
     /// @param entryFeeBasisPoints The new entry fee in basis points.
+    /// @param exitFeeBasisPoints the new exit fee in basis points.
     event CreatorFeesSet(uint256 entryFeeBasisPoints, uint256 exitFeeBasisPoints);
 
     /// @notice Emitted when the vault fee recipient is set.
@@ -203,28 +206,7 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
         }
     }
 
-    /// @dev Send exit fee to {_exitFeeRecipient}. See {IERC4626-_deposit}.
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
-        uint256 assets,
-        uint256 shares
-    ) internal virtual override {
-        uint256 protocolFee = _feeOnRaw(assets, protocolExitFee);
-        uint256 creatorFee = _feeOnRaw(assets, creatorExitFee);
-
-        super._withdraw(caller, receiver, owner, assets, shares);
-
-        if (protocolFee > 0) {
-            SafeERC20.safeTransfer(IERC20(asset()), protocolFeeRecipient, protocolFee);
-        }
-        if (creatorFee > 0) {
-            SafeERC20.safeTransfer(IERC20(asset()), creatorFeeRecipient, creatorFee);
-        }
-    }
-
-    /**
+        /**
      * @dev Sets the vault fees.
      * @param entryFeeBasisPoints The new entry fee in basis points. Must not exceed 50%.
      * @param exitFeeBasisPoints The new exit fee in basis points. Must not exceed 50%.
@@ -266,13 +248,34 @@ contract ZeroToken is IZeroToken, Ownable, ERC4626 {
      * @dev Sets the creator fee recipient.
      * @param newRecipient The new creator fee recipient
      */
-    function setCreatorFeeRecipient(address newRecipient) public onlyOwner {
+    function setCreatorFeeRecipient(address newRecipient) public override onlyOwner {
         if(newRecipient == address(0)){
             revert NoRecipient();
         }
         creatorFeeRecipient = newRecipient;
 
         emit CreatorFeeRecipientSet(newRecipient);
+    }
+
+    /// @dev Send exit fee to {_exitFeeRecipient}. See {IERC4626-_deposit}.
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256 shares
+    ) internal virtual override {
+        uint256 protocolFee = _feeOnRaw(assets, protocolExitFee);
+        uint256 creatorFee = _feeOnRaw(assets, creatorExitFee);
+
+        super._withdraw(caller, receiver, owner, assets, shares);
+
+        if (protocolFee > 0) {
+            SafeERC20.safeTransfer(IERC20(asset()), protocolFeeRecipient, protocolFee);
+        }
+        if (creatorFee > 0) {
+            SafeERC20.safeTransfer(IERC20(asset()), creatorFeeRecipient, creatorFee);
+        }
     }
 
     /**
